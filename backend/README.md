@@ -8,4 +8,4 @@
 4. `pre-commit install --install-hooks`
 5. code
 6. run tests with `tox -e py36,coverage,mypy`
-7. run `flake8 tests syncr_backend` and `pep8 tests syncr_backend`
+7. run `flake8 tests syncr_backend` and `pycodestyle tests syncr_backend`
