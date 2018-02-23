@@ -32,7 +32,9 @@ def load_public_key(key: bytes) -> rsa.RSAPublicKey:
 def load_private_key(key: bytes) -> rsa.RSAPrivateKey:
     """Load a private key from bytes"""
     return serialization.load_pem_private_key(
-        key, None, backend=default_backend(),
+        key,
+        None,
+        backend=default_backend(),
     )
 
 
@@ -59,6 +61,17 @@ def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     """
     key_serial = dump_public_key(key)
     return hash(key_serial)
+
+
+def generate_private_key() -> rsa.RSAPrivateKey:
+    """Generate a public and private key """
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=4048,
+        backend=default_backend(),
+    )
+
+    return private_key
 
 
 def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
