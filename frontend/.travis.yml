@@ -1,0 +1,9 @@
+language: python
+python:
+    - "3.6"
+env:
+    - TOXENV=py36,coverage,mypy
+script:
+    - flake8 frontend tests
+    - pycodestyle frontend tests
+    - tox

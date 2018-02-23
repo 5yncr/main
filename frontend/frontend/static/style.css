@@ -1,0 +1,130 @@
+body {
+    font-family : sans-serif;
+    background : #eee;
+    margin: 0;
+    padding: 0;
+}
+a, h1, h2 {
+    color : #000000;
+}
+h1, h2 {
+    font-family : 'Georgia', serif;
+    margin : 0;
+}
+h1 {
+    border-bottom : 2px solid #eee;
+}
+h2 {
+    font-size : 1.2em;
+}
+.navbar li {
+    list-style-type : none;
+    margin : 0;
+    padding : 0;
+}
+.page {
+    margin : 2em auto;
+    width : 80%;
+    border : #ccc solid 5px;
+    padding : 0.8em;
+    background : white;
+    display:block;
+}
+.drops {
+    list-style : none;
+    margin : 0;
+    padding : 0;
+}
+.drops li {
+    margin : 0.8em 1.2em;
+}
+.drops li h2 {
+    margin-left : -1em;
+}
+.add-drop {
+    font-size : 0.9em;
+    border-bottom : 1px solid #ccc;
+}
+.add-drop dl {
+    font-weight : bold;
+}
+.metanav {
+    text-align : right;
+    font-size : 0.8em;
+    padding : 0.3em;
+    margin-bottom : 1em;
+    background : #fafafa;
+}
+.flash {
+    background : #cee5F5;
+    padding : 0.5em;
+    border : #aacbe2 solid 1px;
+}
+.error {
+    background : #f0d6d6;
+    padding : 0.5em;
+}
+.drop-type {
+    font-size : 1.2em;
+}
+.drop-name {
+    font-size: 0.8em;
+}
+.sidenav {
+    width: 130px;
+    position: fixed;
+    z-index: 1;
+    top: 20px;
+    left: 10px;
+    background: #eee;
+    overflow-x: hidden;
+    padding: 8px 0;
+}
+.drop-list {
+    vertical-align:top;
+    display:inline-block;
+    width: 15%;
+    border-style: solid;
+    border-color: slategray;
+    padding:0;
+    margin:0;
+}
+.drop-info {
+    vertical-align:top;
+    display:inline-block;
+    border-style: solid;
+    border-color: slategray;
+    min-height: 400px;
+    width: 100%;
+}
+.right-panel {
+    vertical-align:top;
+    display:inline-block;
+    padding:0;
+    margin:0;
+    width: 80%;
+}
+.btn-group button {
+    background-color: #4CAF50; /* Green background */
+    border: 1px solid green; /* Green border */
+    color: white; /* White text */
+    padding: 10px 24px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    float: left; /* Float the buttons side by side */
+}
+
+.btn-group button:not(:last-child) {
+    border-right: none; /* Prevent double borders */
+}
+
+/* Clear floats (clearfix hack) */
+.btn-group:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+/* Add a background color on hover */
+.btn-group button:hover {
+    background-color: #3e8e41;
+}
