@@ -1,3 +1,8 @@
+# 23/02/2018
+      We spent much of this week getting dev environments set up properly, and
+      github/travis/code style checks/etc working
+
+
 # main
 don't push here by hand, commits will be gathered from other repos for submissoin 
 

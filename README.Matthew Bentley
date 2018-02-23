@@ -1,0 +1,6 @@
+# 23/02/2018
+      main: Committing crimes against git: a script to merge repos with commits
+      backend: file_metadata: adds basic file_metadata functions and repo setup
+      backend: Add crypto utils and use it
+      backend: Add additional file metadata functions: read and write to files
+
