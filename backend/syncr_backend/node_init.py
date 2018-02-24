@@ -2,8 +2,7 @@ import os
 import shutil
 
 from syncr_backend import crypto_util
-
-DEFAULT_INIT_DIR = ".node/"
+from syncr_backend.constants import DEFAULT_INIT_DIR
 
 
 def force_initialize_node(init_directory: str=DEFAULT_INIT_DIR) -> None:

@@ -7,9 +7,8 @@ from typing import Optional
 import bencode  # type: ignore
 
 from syncr_backend import crypto_util
-
-DEFAULT_CHUNK_SIZE = 2**23
-DEFAULT_FILE_METADATA_LOCATION = b".files/"
+from syncr_backend.constants import DEFAULT_CHUNK_SIZE
+from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
 
 
 class FileMetadata(object):
