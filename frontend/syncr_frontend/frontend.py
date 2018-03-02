@@ -57,13 +57,126 @@ def get_selected_drop(drop_id):
 
     return {
         'name': drop_id, 'files': [
-            {'name': 'FileOne', 'type': 'text'},
-            {'name': 'FileTwo', 'type': 'image'},
-            {'name': 'FileThree', 'type': 'video'},
-            {'name': 'FileFour', 'type': 'text'},
-            {'name': 'Folder', 'type': 'folder'},
-        ],
+            {'name': 'FileOne', 'type': 'text', 'occr': 'once'},
+            {'name': 'FileTwo', 'type': 'image', 'occr': 'many'},
+            {'name': 'FileThree', 'type': 'video', 'occr': 'once'},
+            {'name': 'FileFour', 'type': 'text', 'occr': 'once'},
+            {'name': 'Folder', 'type': 'folder', 'occr': 'many'},
+        ], 'permission': get_permission(drop_id),
     }
+
+
+def get_conflicting_files(drop_id):
+    # eventually will be used to retrieve files of conflicting drops
+    pass
+
+
+def get_permission(drop_id):
+    # returns the permission type of the drop ID
+    owned_drops = get_owned_drops()
+
+    for drop in owned_drops:
+        if drop['name'] == drop_id:
+            return "owned"
+
+    return "subscribed"
+
+
+def decline_conflict_file(file_path):
+    # if a file is in conflict with master
+    # declining changes leaves file on master the same
+    # backend communication: remove conflict file
+    return
+
+
+def accept_conflict_file(file_path):
+    # if a file is in conflict with file in master
+    # accepting changes modifies master file
+    # backend communication: change master file
+    return
+
+
+def accept_changes(file_path):
+    # Accepts the proposed changes of a file
+    # backend: modify the master file with proposed changes
+    return
+
+
+def decline_changes(file_path):
+    # Declines the proposed changes of a file
+    # backend: discard changes, keep master file
+    return
+
+
+@app.route('/view_conflicts/<drop_id>')
+def view_conflicts(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # retrieve files from all conflicting drops
+        # display said files in body of page
+    return show_drops(drop_id, "Current conflicts")
+
+
+@app.route('/add_file/<drop_id>')
+def add_file(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # communicate change to backend.
+        # open finder / windows equivalent to choose file.
+    return show_drops(drop_id, "file added")
+
+
+@app.route('/share_drop/<drop_id>')
+def share_drop(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # communicate with backend to retrieve public key
+        # display public key in the body of the page
+    return show_drops(drop_id, "drop shared")
+
+
+@app.route('/view_pending_changes/<drop_id>')
+def view_pending_changes(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # display pending file changes on body of page
+        # should provide options to review/accept pending changes
+    return show_drops(drop_id, "view pending changes")
+
+
+@app.route('/view_owners/<drop_id>')
+def view_owners(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # communicate with backend to retrieve owners
+        # display owners on body of page
+        # give user option to remove owners if primary owner
+    return show_drops(drop_id, "list of owners")
+
+
+@app.route('/whitelist/<drop_id>')
+def whitelist(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # display prompt on page to whitelist node
+        # prompt should communicate with backend
+    return show_drops(drop_id, "node whitelisted")
+
+
+@app.route('/delete_drop/<drop_id>')
+def delete_drop(drop_id):
+    # if no drop is selected
+        # do nothing
+    # else
+        # communicate deletion to backend.
+        # backend should delete drop?
+    return show_drops(drop_id, "drop deleted")
 
 
 @app.route('/unsubscribe/<drop_id>')

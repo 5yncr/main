@@ -24,21 +24,70 @@
 
 
 {% block toolbar %}
-{% if selected %}
-	<div class="btn-group">
-  		<a href="{{ url_for('show_drops', drop_id=selected.name) }}">
-        <button>Reload</button></a>
-  		<a href="{{ url_for('unsubscribe', drop_id=selected.name) }}">
-        <button>Unsubscribe</button></a>
-  		<a href="{{ url_for('request_change', drop_id=selected.name) }}">
-        <button>Request Change</button></a>
-	</div>
+{% if selected and selected.permission == "owned" %}
+  <div class="btn-group">
+    <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
+    <a href="{{ url_for('share_drop', drop_id=selected.name) }}"><button>Share</button></a>
+    <a href="{{ url_for('add_file', drop_id=selected.name) }}"><button>Add File</button></a>
+    <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
+    <a href="{{ url_for('view_pending_changes', drop_id=selected.name) }}"><button>Pending Changes</button></a>
+    <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>
+    <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete</button></a>
+    <a href="{{ url_for('view_conflicts', drop_id=selected.name) }}"><button>Conflicts</button></a>
+  </div>
+{% elif selected and selected.permission == "subscribed" %}
+  <div class="btn-group">
+      <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
+      <a href="{{ url_for('unsubscribe', drop_id=selected.name) }}"><button>Unsubscribe</button></a>
+      <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
+  </div>
 {% endif %}
 {% endblock %}
 
 
 {% block body %}
-{% if selected %}
+{% if selected and action.description == "Current conflicts" %}
+    Current conflicts of drop {{ selected.name|safe }}:
+    <table class=file-table>
+    {% for file in selected.files %}
+      <tr class=file-info-row>
+        <th class=file-name>{{ file.name|safe }}</th>
+        <th class=file-actions>
+          <div class=file-action-container>
+            <div class=file-action-button-container>
+              <form class=file-action-button name='conflict_action' action = '' method = 'post'>
+                {% if file.occr == "many" %}
+                <input class=file-action-button type='submit' name='template_for_dropdown' value='template' />
+                {% endif %}
+                <input class=file-action-button type='submit' name='decline_conflict_file' value='decline' />
+                <input class=file-action-button type='submit' name='accept_conflict_file' value='accept' />
+              </form>
+            </div>
+          </div>
+        </th>
+      </tr>
+    {% endfor %}
+    </table>
+{% elif selected and action.description == "view pending changes" %}
+    Pending changes of drop {{ selected.name| safe }}:
+    <table class=file-table>
+    {% for file in selected.files %}
+      <tr class=file-info-row>
+        <th class=file-name>{{ file.name|safe }}</th>
+        <th class=file-actions>
+          <div class=file-action-container>
+            <div class=file-action-button-container>
+              <form class=file-action-button name='change_action' action = '' method = 'post'>
+                <input class=file-action-button type='submit' name='accept_changes' value='accept changes' />
+                <input class=file-action-button type='submit' name='decline_changes' value='decline changes' />
+              </form>
+            </div>
+          </div>
+        </th>
+      </tr>
+    {% endfor %}
+    </table>
+{% elif selected %}
     Name is {{ selected.name|safe }}. {{ action.description|safe }}
     <table class=file-table>
     {% for file in selected.files %}
