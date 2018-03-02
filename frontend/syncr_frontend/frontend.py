@@ -1,5 +1,10 @@
+import platform
+import subprocess
+from os import path
+
 from flask import Flask
 from flask import render_template
+from flask import request
 
 app = Flask(__name__)  # create the application instance
 app.config.from_object(__name__)  # load config from this file , frontend.py
@@ -12,6 +17,24 @@ app.config.update(dict(
 app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 
 # Backend Access Functions
+
+
+def open_file_location(file_path):
+    # Placeholder until backend communication is set-up
+    file_path = path.dirname(path.abspath(__file__))
+
+    op_sys = platform.system()
+    if op_sys == 'Windows':
+        subprocess.Popen(['explorer', file_path])
+    if op_sys == 'Linux':
+        subprocess.Popen(['xdg-open', file_path])
+    if op_sys == 'Darwin':
+        subprocess.Popen(['open', file_path])
+
+
+def remove_file(file_path):
+    # Remove file at specified location from drop info
+    return
 
 
 def get_owned_drops():
@@ -27,8 +50,20 @@ def get_subscribed_drops():
 
 
 def get_selected_drop(drop_id):
+    # Placeholder until backend communication is set-up
+    # TODO: validate data structure
+
     # if drop does not exist -> return default drop display
-    return {'name': drop_id}
+
+    return {
+        'name': drop_id, 'files': [
+            {'name': 'FileOne', 'type': 'text'},
+            {'name': 'FileTwo', 'type': 'image'},
+            {'name': 'FileThree', 'type': 'video'},
+            {'name': 'FileFour', 'type': 'text'},
+            {'name': 'Folder', 'type': 'folder'},
+        ],
+    }
 
 
 @app.route('/unsubscribe/<drop_id>')
@@ -55,16 +90,27 @@ def startup():
     return show_drops(None, None)
 
 
-@app.route('/<drop_id>')
+@app.route('/<drop_id>', methods=['GET', 'POST'])
 def show_drops(drop_id=None, message=None):
     owned_drops = get_owned_drops()
     subscribed_drops = get_subscribed_drops()
     selected_drop = []
+
     if drop_id is not None:
         selected_drop = get_selected_drop(drop_id)
+
     performed_action = []  # REMOVE WHEN BACKEND COMMUNICATION IS ADDED
+
     if message is not None:
         performed_action = {'description': message}
+
+    # File Actions
+    if request.method == 'POST':
+        if request.form.get('type') == 'open_file':
+            open_file_location('PUT PROPER LOCATION HERE')
+        elif request.form.get('type') == 'remove_file':
+            remove_file('PUT PROPER LOCATION HERE')
+
     return render_template(
         'show_drops.html', selected=selected_drop, subscribed=subscribed_drops,
         owned=owned_drops, action=performed_action,

@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block drop_list %}
+<div >
+    <h1 class=drop-type>Owned Drops</h1>
+    <ul class=drops>
+        {% for drop in owned %}
+            <li><a href="{{ url_for('show_drops', drop_id=drop.name) }}"><h2 class=drop-name>{{ drop.name|safe }}</h2></a>
+        {% else %}
+            <li><em>None</em>
+        {% endfor %}
+    </ul>
+
+    <h1 class=drop-type>Subscribed Drops</h1>
+    <ul class=drops>
+        {% for drop in subscribed %}
+            <li><a href="{{ url_for('show_drops', drop_id=drop.name) }}"><h2 class=drop-name>{{ drop.name|safe }}</h2></a>
+        {% else %}
+            <li><em>None</em>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+
+{% block toolbar %}
+{% if selected %}
+	<div class="btn-group">
+  		<a href="{{ url_for('show_drops', drop_id=selected.name) }}">
+        <button>Reload</button></a>
+  		<a href="{{ url_for('unsubscribe', drop_id=selected.name) }}">
+        <button>Unsubscribe</button></a>
+  		<a href="{{ url_for('request_change', drop_id=selected.name) }}">
+        <button>Request Change</button></a>
+	</div>
+{% endif %}
+{% endblock %}
+
+
+{% block body %}
+{% if selected %}
+    Name is {{ selected.name|safe }}. {{ action.description|safe }}
+    <table class=file-table>
+    {% for file in selected.files %}
+        <tr class=file-info-row>
+            <th class=file-name>{{ file.name|safe }}</th>
+            <th class=file-actions>
+              <div class=file-action-container>
+                <div class=file-action-button-container>
+                  <form class=file-action-button name='open_file' action = '' method = 'post'>
+                    <input type="hidden" name="type" value="open_file">
+                    <input class=file-action-button type='submit' name='open_file' value='open' />
+                  </form>
+                </div>
+                <div class=file-action-button-container>
+                  <form class=file-action-button name='remove_file' action = '' method = 'post'>
+                    <input type="hidden" name="type" value="remove_file">
+                    <input class=file-action-button type='submit' name='remove_file' value='remove' />
+                  </form>
+                </div>
+              </div>
+            </th>
+        </tr>
+    {% endfor %}
+    </table>
+{% else %}
+    No Drop Selected {{ action.description|safe }}
+{% endif %}
+{% endblock %}

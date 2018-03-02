@@ -4,6 +4,6 @@ python:
 env:
     - TOXENV=py36,coverage,mypy
 script:
-    - flake8 frontend tests
-    - pycodestyle frontend tests
+    - flake8 syncr_frontend tests
+    - pycodestyle syncr_frontend tests
     - tox

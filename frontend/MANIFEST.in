@@ -1,2 +1,2 @@
-graft frontend/templates
-graft frontend/static
+graft syncr_frontend/templates
+graft syncr_frontend/static

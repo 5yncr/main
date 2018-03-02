@@ -8,7 +8,7 @@ a, h1, h2 {
     color : #000000;
 }
 h1, h2 {
-    font-family : 'Georgia', serif;
+    font-family : 'Futura', serif;
     margin : 0;
 }
 h1 {
@@ -103,6 +103,32 @@ h2 {
     padding:0;
     margin:0;
     width: 80%;
+}
+.file-table {
+    width: 100%;
+    border-collapse:collapse;
+}
+.file-info-row:nth-child(odd) {
+    background-color:gainsboro;
+}
+.file-name {
+    width: auto;
+    text-align: left;
+}
+th.file-actions {
+    display: inline-block;
+    float: right;
+}
+div.file-action-container {
+    display: inline-block;
+    float: right;
+}
+div.file-action-button-container {
+  display: inline-block;
+}
+input.file-action-button {
+    display: inline-block;
+    color: brown;
 }
 .btn-group button {
     background-color: #4CAF50; /* Green background */
