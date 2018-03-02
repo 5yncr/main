@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 
 import bencode
+from syncr_backend.constants import TRACKER_OK_RESULT
 
-from syncr_tracker.constants import OK_RESULT
 from syncr_tracker.tracker import generate_node_key_file_name
 from syncr_tracker.tracker import handle_post
 from syncr_tracker.tracker import send_server_response
@@ -66,11 +66,11 @@ def test_generate_node_key_file_name():
 def test_send_server_response():
     conn = Mock()
     conn.send = MagicMock()
-    send_server_response(conn, OK_RESULT, 'Message', 'a')
+    send_server_response(conn, TRACKER_OK_RESULT, 'Message', 'a')
 
     conn.send.assert_called_with(bencode.encode(
         {
-            'result': OK_RESULT,
+            'result': TRACKER_OK_RESULT,
             'message': 'Message',
             'data': 'a',
         },

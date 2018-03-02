@@ -10,6 +10,7 @@ chardet==3.0.4
 coverage==4.5.1
 cryptography==2.1.4
 flake8==3.5.0
+git+https://github.com/5yncr/backend@master
 httplib2==0.10.3
 identify==1.0.7
 idna==2.6
