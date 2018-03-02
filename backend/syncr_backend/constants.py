@@ -24,4 +24,4 @@ DEFAULT_CHUNK_SIZE = 2**23
 DEFAULT_FILE_METADATA_LOCATION = b".files/"
 
 # Node init constants
-DEFAULT_INIT_DIR = ".node/"
+DEFAULT_INIT_DIR = ".5nycr/"
