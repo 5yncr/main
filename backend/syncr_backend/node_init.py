@@ -15,6 +15,16 @@ def force_initialize_node(init_directory: str=DEFAULT_INIT_DIR) -> None:
     initialize_node(init_directory)
 
 
+def delete_node_directory(init_directory: str=DEFAULT_INIT_DIR) -> None:
+    """
+    Deletes the .node (or passed in) directory and all of its contents
+
+    :param init_directory: directory to delete, defaults to .node
+    """
+    if os.path.exists(init_directory):
+        shutil.rmtree(init_directory)
+
+
 def is_node_initialized(init_directory: str=DEFAULT_INIT_DIR) -> bool:
     return os.path.exists(init_directory)
 

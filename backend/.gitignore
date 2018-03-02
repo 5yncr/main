@@ -102,3 +102,6 @@ ENV/
 *.swp
 .pytest_cache/
 MANIFEST
+
+# syncr
+.node/
