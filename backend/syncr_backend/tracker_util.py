@@ -1,4 +1,6 @@
 import socket
+from typing import Any
+from typing import Dict
 
 import bencode  # type: ignore
 
@@ -6,7 +8,9 @@ from syncr_backend.constants import TRACKER_BUFFER_SIZE
 from syncr_backend.constants import TRACKER_ERROR_RESULT
 
 
-def send_request_to_tracker(request: list, ip: str, port: int) -> dict:
+def send_request_to_tracker(
+    request: list, ip: str, port: int,
+) -> Dict[str, Any]:
     """
     Creates a connection with the tracker and sends a given request to the
     tracker and returns the response

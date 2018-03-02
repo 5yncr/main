@@ -1,8 +1,10 @@
 language: python
 python:
     - "3.6"
+    - "3.5"
+    - "3.4"
 env:
-    - TOXENV=py36,coverage,mypy
+    - TOXENV=py3,coverage,mypy
 script:
     - flake8 syncr_backend tests
     - pycodestyle syncr_backend tests

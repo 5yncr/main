@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
@@ -50,7 +51,9 @@ class TrackerKeyStore(PublicKeyStore):
             print(response.get('message'))
             return False
 
-    def request_key(self, request_node_id: bytes) -> Tuple[bool, str]:
+    def request_key(
+        self, request_node_id: bytes,
+    ) -> Tuple[bool, Optional[str]]:
         """
         Asks tracker for the public key of a given node for sake of signature
         verification

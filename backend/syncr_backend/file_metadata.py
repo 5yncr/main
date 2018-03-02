@@ -42,6 +42,8 @@ class FileMetadata(object):
         self, metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
     ) -> None:
         """Write this file metadata to a file
+
+        :param metadata_location: where to save it
         """
         file_name = crypto_util.b64encode(self.file_hash)
         if not os.path.exists(metadata_location):

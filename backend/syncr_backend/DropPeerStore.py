@@ -1,5 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import List
+from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
@@ -53,7 +55,9 @@ class TrackerPeerStore(DropPeerStore):
             print(response.get('message'))
             return False
 
-    def request_peers(self, drop_id: bytes) -> Tuple[bool, list]:
+    def request_peers(
+        self, drop_id: bytes,
+    ) -> Tuple[bool, Optional[List[Tuple[str, str, str]]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash

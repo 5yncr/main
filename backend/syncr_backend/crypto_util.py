@@ -1,10 +1,12 @@
 # Functions for dealing with hashes/keys/ids in a consistant manner
 import base64
 import hashlib
+import os
 from typing import Any
 from typing import Dict
 
 import bencode  # type: ignore
+from cryptography.exceptions import InvalidSignature  # type: ignore
 from cryptography.hazmat.backends import default_backend  # type: ignore
 from cryptography.hazmat.primitives import hashes  # type: ignore
 from cryptography.hazmat.primitives import serialization  # type: ignore
@@ -14,28 +16,77 @@ from cryptography.hazmat.primitives.asymmetric import rsa  # type: ignore
 B64_ALT_CHARS = b'+-'
 
 
+class VerificationException(Exception):
+    pass
+
+
 def hash(b: bytes) -> bytes:
-    """Default hash function"""
+    """Default hash function
+
+    :param b: The bytes to hash
+    :return: The hash of b
+    """
     return hashlib.sha256(b).digest()
 
 
+def hash_dict(b: Dict[str, Any]) -> bytes:
+    """Hash a dictionary, by first bencoding it
+
+    :param b: The dictionary to hash
+    :return: The hash of bencode(b)
+    """
+    return hash(bencode.encode(b))
+
+
 def b64encode(b: bytes) -> bytes:
-    """Encode a binary sequence for humans to read"""
+    """Encode a binary sequence for humans to read
+
+    :param b: The sequence to encode
+    :return: An encoded sequence
+    """
     return base64.b64encode(b, altchars=B64_ALT_CHARS)
 
 
 def b64decode(b: bytes) -> bytes:
-    """Decode a b64 sequence back into binary"""
+    """Decode a b64 sequence back into binary
+
+    :param b: The encoded sequence
+    :return: The decoded bytes
+    """
     return base64.b64decode(b, altchars=B64_ALT_CHARS)
 
 
+def random_bytes() -> bytes:
+    """Generate 32 random bytes
+
+    :returns: 32 random bytes
+    """
+    return os.urandom(32)
+
+
+def random_int() -> int:
+    """Generate a random integer
+
+    :returns: a random 64 bit int
+    """
+    return int.from_bytes(os.urandom(8), 'big')
+
+
 def load_public_key(key: bytes) -> rsa.RSAPublicKey:
-    """Load a public key from bytes"""
+    """Load a public key from bytes
+
+    :param key: The serialized key
+    :return: The RSAPublicKey object of the key
+    """
     return serialization.load_pem_public_key(key, backend=default_backend())
 
 
 def load_private_key(key: bytes) -> rsa.RSAPrivateKey:
-    """Load a private key from bytes"""
+    """Load a private key from bytes
+
+    :param key: The serialized key
+    :return: The RSAPrivateKey object of the key
+    """
     return serialization.load_pem_private_key(
         key,
         None,
@@ -43,8 +94,12 @@ def load_private_key(key: bytes) -> rsa.RSAPrivateKey:
     )
 
 
-def dump_public_key(key: rsa.RSAPrivateKey) -> bytes:
-    """Dump a public key to PEM format (text)"""
+def dump_public_key(key: rsa.RSAPublicKey) -> bytes:
+    """Dump a public key to PEM format (text)
+
+    :param key: An RSAPrivateKey to dump the public key of
+    :return: The dumped bytes of the public key, as PEM
+    """
     return key.public_key().public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
@@ -52,7 +107,11 @@ def dump_public_key(key: rsa.RSAPrivateKey) -> bytes:
 
 
 def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
-    """Dump a private key to PEM format (text)"""
+    """Dump a private key to PEM format (text)
+
+    :param key: The Private Key objec to dump
+    :return: The bytes of the private key, as PEM
+    """
     return key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -63,13 +122,19 @@ def dump_private_key(key: rsa.RSAPrivateKey) -> bytes:
 def node_id_from_public_key(key: rsa.RSAPublicKey) -> bytes:
     """Generate a node id from a public key
     It uses the default dump, and hashes that
+
+    :param key: The Public key to generate the nodeid from
+    :return: The nodeid, as bytes
     """
     key_serial = dump_public_key(key)
     return hash(key_serial)
 
 
 def generate_private_key() -> rsa.RSAPrivateKey:
-    """Generate a public and private key """
+    """Generate a public and private key
+
+    :return: A new RSAPrivateKey
+    """
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=4048,
@@ -125,7 +190,10 @@ def verify_signed_dictionary(
         hashes.SHA256(),
     )
     verifier.update(hash(bencode.encode(dictionary)))
-    verifier.verify()
+    try:
+        verifier.verify()
+    except InvalidSignature:
+        raise VerificationException()
 
 
 def node_id_from_private_key(key: rsa.RSAPrivateKey) -> bytes:
