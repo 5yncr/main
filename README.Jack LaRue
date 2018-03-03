@@ -1,3 +1,7 @@
+# 02/03/2018
+      frontend: Implemented owner drop buttons and created UI layout for Conflict and Requested Changes buttons. (#3)
+      notes: This week was my first exposure to both HTML5 and CSS, so I spent a decent amount of time both reading and getting used to the syntax
+
 # 23/02/2018
       tracker: Add get handling Functions to tracker
 

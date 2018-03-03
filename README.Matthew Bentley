@@ -1,3 +1,6 @@
+# 02/03/2018
+      backend: Add the initial implementation of the drop metadata class
+
 # 23/02/2018
       main: Committing crimes against git: a script to merge repos with commits
       backend: file_metadata: adds basic file_metadata functions and repo setup

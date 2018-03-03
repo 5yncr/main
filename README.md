@@ -1,3 +1,9 @@
+# 02/03/2018
+      This week we made progress and stayed on schedule.  We expect that if all
+      goes well we will be able to get a bit ahead of schedule next week, and
+      possibly implement more in depth integration tests
+
+
 # 23/02/2018
       We spent much of this week getting dev environments set up properly, and
       github/travis/code style checks/etc working

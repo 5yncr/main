@@ -1,3 +1,8 @@
+# 02/03/2018
+      backend: Setup constants file and apply it
+      backend: Add backend-tracker communication
+      tracker: Switch to backend constants and fix get/post compatibility
+
 # 23/02/2018
       tracker: Handle POST tracker web requests
 

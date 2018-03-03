@@ -1,3 +1,8 @@
+# 02/03/2018
+      backend: Add sign and verify dictionary functionality (#8)
+      backend: Enable shell commands to call node init functions (#12)
+      backend: Make node directory default to home directory (#13)
+
 # 23/02/2018
       backend: Add node initialization functionality
 
