@@ -2,6 +2,7 @@ import platform
 import subprocess
 from os import path
 
+from flask import flash
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -19,6 +20,52 @@ app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 # Backend Access Functions
 
 
+def send_message(message):
+    # Sends given message to backend
+    # Wait for a response or until TIMEOUT
+    # If error_message is not None, display error_message
+    # Else display success_message
+
+    # Example response for initial UI setup
+    # TODO: remove when socket communication is setup
+    response = {
+        'drop_id': message.get('drop_id'),
+        'file_name': message.get('file_name'),
+        'action': message.get('action'),
+        'message': "Generic Message For " + message.get('action'),
+        'success': True,
+        'requested_drops': (
+            {
+                'drop_id': 'o1',
+                'name': 'O_Drop_1',
+                'version': None,
+                'previous_versions': [],
+                'primary_owner': 'owner_id',
+                'other_owners': [],
+                'signed_by': 'owner_id',
+                'files': [
+                    {'name': 'FileOne'},
+                    {'name': 'FileTwo'},
+                    {'name': 'FileThree'},
+                    {'name': 'FileFour'},
+                    {'name': 'Folder'},
+                ],
+            },
+            {
+                'drop_id': 'o2',
+                'name': 'O_Drop_2',
+                'version': None,
+                'previous_versions': [],
+                'primary_owner': 'owner_id',
+                'other_owners': [],
+                'signed_by': 'owner_id',
+                'files': [],
+            },
+        ),
+    }
+    return response
+
+
 def open_file_location(file_path):
     # Placeholder until backend communication is set-up
     file_path = path.dirname(path.abspath(__file__))
@@ -32,38 +79,97 @@ def open_file_location(file_path):
         subprocess.Popen(['open', file_path])
 
 
-def remove_file(file_path):
+@app.route('/remove_file/<drop_id>/<file_name>')
+def remove_file(drop_id, file_name):
     # Remove file at specified location from drop info
-    return
-
-
-def get_owned_drops():
-    # Placeholder until backend communication is set-up
-    # TODO: validate data structure
-    return [{'name': 'O_Drop_1'}, {'name': 'O_Drop_2'}]
-
-
-def get_subscribed_drops():
-    # Placeholder until backend communication is set-up
-    # TODO: validate data structure
-    return [{'name': 'S_Drop_1'}, {'name': 'S_Drop_2'}, {'name': 'S_Drop_3'}]
-
-
-def get_selected_drop(drop_id):
-    # Placeholder until backend communication is set-up
-    # TODO: validate data structure
-
-    # if drop does not exist -> return default drop display
-
-    return {
-        'name': drop_id, 'files': [
-            {'name': 'FileOne', 'type': 'text', 'occr': 'once'},
-            {'name': 'FileTwo', 'type': 'image', 'occr': 'many'},
-            {'name': 'FileThree', 'type': 'video', 'occr': 'once'},
-            {'name': 'FileFour', 'type': 'text', 'occr': 'once'},
-            {'name': 'Folder', 'type': 'folder', 'occr': 'many'},
-        ], 'permission': get_permission(drop_id),
+    message = {
+        'drop_id': drop_id,
+        'file_name': file_name,
+        'action': 'rf',
     }
+    response = send_message(message)
+    # TODO: Remove file name after proper communication is set up
+    return show_drops(
+        response.get('drop_id'),
+        response.get('message') + " " + response.get("file_name"),
+    )
+
+
+# Return list of owned drop dictionaries
+def get_owned_drops():
+    message = {
+        'action': 'get_owned',
+    }
+
+    response = send_message(message)
+
+    return response.get('requested_drops')
+
+
+# Return list of subscribed drop dictionaries
+def get_subscribed_drops():
+    message = {
+        'action': 'get_owned',
+    }
+
+    send_message(message)
+    # response = send_message(message)
+
+    # TODO: Return generic response once socket communication is setup
+    # return response.get('requested_drops')
+    return (
+        {
+            'drop_id': 's1',
+            'name': 'S_Drop_1',
+            'version': None,
+            'previous_versions': [],
+            'primary_owner': 'owner_id',
+            'other_owners': [],
+            'signed_by': 'owner_id',
+            'files_hash': ["files_hash"],
+            'files': [
+                    {'name': 'FileOne'},
+                    {'name': 'FileTwo'},
+                    {'name': 'FileThree'},
+                    {'name': 'FileFour'},
+                    {'name': 'Folder'},
+            ],
+            'sig': ["header_signature"],
+        },
+        {
+            'drop_id': 's2',
+            'name': 'S_Drop_2',
+            'version': None,
+            'previous_versions': [],
+            'primary_owner': 'owner_id',
+            'other_owners': [],
+            'signed_by': 'owner_id',
+            'files_hash': ["files_hash"],
+            'files': [
+                    {'name': 'FileOne'},
+                    {'name': 'FileTwo'},
+                    {'name': 'FileThree'},
+            ],
+            'sig': ["header_signature"],
+        },
+    )
+
+
+# Return dictionary for selected drop
+def get_selected_drop(drop_id):
+    message = {
+        'drop_id': drop_id,
+        'action': 'get_selected',
+    }
+
+    response = send_message(message)
+
+    drop_list = response.get('requested_drops')
+
+    if drop_list is None:
+        return None
+    else:
+        return drop_list[0]
 
 
 def get_conflicting_files(drop_id):
@@ -120,22 +226,34 @@ def view_conflicts(drop_id):
 
 @app.route('/add_file/<drop_id>')
 def add_file(drop_id):
-    # if no drop is selected
-        # do nothing
-    # else
-        # communicate change to backend.
-        # open finder / windows equivalent to choose file.
-    return show_drops(drop_id, "file added")
+
+    file_path = None  # TODO: implement file picker (tkinter not working)
+
+    if file_path is None:
+        result = None
+    else:
+        message = {
+            'drop_id': drop_id,
+            'action': 'cp',
+            'file_path': file_path,
+        }
+        response = send_message(message)
+        # TODO: remove filename after socket setup
+        result = response.get('message') + ' ' + file_path
+
+    return show_drops(drop_id, result)
 
 
 @app.route('/share_drop/<drop_id>')
 def share_drop(drop_id):
-    # if no drop is selected
-        # do nothing
-    # else
-        # communicate with backend to retrieve public key
-        # display public key in the body of the page
-    return show_drops(drop_id, "drop shared")
+    message = {
+        'drop_id': drop_id,
+        'action': 'share',
+    }
+    response = send_message(message)
+    # TODO: remove drop_id after socket setup
+    result = response.get('message') + ' share id for ' + drop_id
+    return show_drops(drop_id, result)
 
 
 @app.route('/view_pending_changes/<drop_id>')
@@ -150,12 +268,9 @@ def view_pending_changes(drop_id):
 
 @app.route('/view_owners/<drop_id>')
 def view_owners(drop_id):
-    # if no drop is selected
-        # do nothing
-    # else
-        # communicate with backend to retrieve owners
-        # display owners on body of page
-        # give user option to remove owners if primary owner
+    # communicate with backend to retrieve owners
+    # display owners on body of page
+    # give user option to remove owners if primary owner
     return show_drops(drop_id, "list of owners")
 
 
@@ -181,21 +296,31 @@ def delete_drop(drop_id):
 
 @app.route('/unsubscribe/<drop_id>')
 def unsubscribe(drop_id):
-    # if no drop is selected
-        # Do nothing
-    # else
-        # communicate change to backend
-    return show_drops(None, "unsubscribed")
+    message = {
+        'drop_id': drop_id,
+        'action': 'unsub',
+    }
+    response = send_message(message)
+    result = response.get('message')
+    # TODO: remove drop_id after socket setup
+    result = result + ' ' + drop_id
+
+    if response.get('success') is True:
+        return show_drops(None, result)
+    else:
+        return show_drops(drop_id, result)
 
 
 # Request a change to the selected drop
 @app.route('/request_change/<drop_id>')
 def request_change(drop_id):
-    # if no drop is seleted
-        # Do nothing
-    # else
-        # communicate change to backend
-    return show_drops(drop_id, "change requested")
+    message = {
+        'drop_id': drop_id,
+        'action': 'change',
+    }
+    response = send_message(message)
+    result = response.get('message')
+    return show_drops(drop_id, result)
 
 
 @app.route('/')
@@ -211,30 +336,22 @@ def show_drops(drop_id=None, message=None):
 
     if drop_id is not None:
         selected_drop = get_selected_drop(drop_id)
+        # TODO: Remove when sockets are setup
+        selected_drop['name'] = drop_id
+        selected_drop['permission'] = get_permission(drop_id)
 
     performed_action = []  # REMOVE WHEN BACKEND COMMUNICATION IS ADDED
 
     if message is not None:
         performed_action = {'description': message}
+        flash(message)
 
     # File Actions
     if request.method == 'POST':
         if request.form.get('type') == 'open_file':
             open_file_location('PUT PROPER LOCATION HERE')
-        elif request.form.get('type') == 'remove_file':
-            remove_file('PUT PROPER LOCATION HERE')
 
     return render_template(
         'show_drops.html', selected=selected_drop, subscribed=subscribed_drops,
         owned=owned_drops, action=performed_action,
     )
-
-
-@app.route('/initialize', methods=['GET', 'POST'])
-def initialize():
-    return startup()
-    # if request.method == 'POST':
-    #    session['logged_in'] = True
-    #    flash('You were logged in')
-    #    return redirect(url_for('show_drops'))
-    # return render_template('initialize.html')

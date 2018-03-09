@@ -102,10 +102,9 @@
                   </form>
                 </div>
                 <div class=file-action-button-container>
-                  <form class=file-action-button name='remove_file' action = '' method = 'post'>
-                    <input type="hidden" name="type" value="remove_file">
-                    <input class=file-action-button type='submit' name='remove_file' value='remove' />
-                  </form>
+                    <form method="GET" action="{{ url_for('remove_file', drop_id=selected.name, file_name=file.name) }}">
+                        <input class=file-action-button type='submit' value='remove' />
+                    </form>
                 </div>
               </div>
             </th>
