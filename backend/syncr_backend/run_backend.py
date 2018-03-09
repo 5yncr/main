@@ -2,6 +2,7 @@
 import argparse
 from typing import List
 
+from syncr_backend import drop_init
 from syncr_backend import node_init
 
 
@@ -14,14 +15,14 @@ def execute_node_function(function_name: str, args: List[str]):
     """
 
     # for functions that create or destroy the init directory
-    init_function_map = {
-        "node_init": node_init.initialize_node,
-        "node_force_init": node_init.force_initialize_node,
-        "delete_node": node_init.delete_node_directory,
-    }
-    if function_name in init_function_map:
-        # handles up to one argument
-        init_function_map[function_name](*args[:1])
+    if function_name == "node_init":
+        node_init.initialize_node(args[0])
+    elif function_name == "node_force_init":
+        node_init.force_initialize_node(args[0])
+    elif function_name == "delete_node":
+        node_init.delete_node_directory(args[0])
+    elif function_name == "drop_init":
+        drop_init.initialize_drop(args[0])
 
 
 def main():

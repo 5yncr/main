@@ -100,7 +100,7 @@ def dump_public_key(key: rsa.RSAPublicKey) -> bytes:
     :param key: An RSAPrivateKey to dump the public key of
     :return: The dumped bytes of the public key, as PEM
     """
-    return key.public_key().public_bytes(
+    return key.public_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )

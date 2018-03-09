@@ -39,13 +39,13 @@ class FileMetadata(object):
         return bencode.encode(d)
 
     def write_file(
-        self, metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
+        self, metadata_location: str=DEFAULT_FILE_METADATA_LOCATION,
     ) -> None:
         """Write this file metadata to a file
 
         :param metadata_location: where to save it
         """
-        file_name = crypto_util.b64encode(self.file_hash)
+        file_name = crypto_util.b64encode(self.file_hash).decode("utf-8")
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
         with open(os.path.join(metadata_location, file_name), 'wb') as f:
@@ -54,14 +54,14 @@ class FileMetadata(object):
     @staticmethod
     def read_file(
         file_hash: bytes,
-        metadata_location: bytes=DEFAULT_FILE_METADATA_LOCATION,
+        metadata_location: str=DEFAULT_FILE_METADATA_LOCATION,
     ) -> Optional['FileMetadata']:
         """Read a file metadata file and return FileMetadata
 
         :param file_hash: The hash of the file to read
         :return: a FileMetadata object or None if it does not exist
         """
-        file_name = crypto_util.b64encode(file_hash)
+        file_name = crypto_util.b64encode(file_hash).decode("utf-8")
         if not os.path.exists(os.path.join(metadata_location, file_name)):
             return None
 

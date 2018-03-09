@@ -9,11 +9,11 @@ from syncr_backend.file_metadata import hash_file
 
 def test_file_hashes():
     with tempfile.TemporaryFile() as f:
-        f.write(b'x\11' * 1001)
+        f.write(b'\x11' * 1001)
         f.seek(0)
 
         h_out = file_hashes(f)
-        expected_data = b'x\11' * 1001
+        expected_data = b'\x11' * 1001
         h_expected = hashlib.sha256(expected_data).digest()
 
         assert len(h_out) == 1

@@ -4,6 +4,8 @@ from typing import Iterator
 from typing import List
 from typing import Tuple
 
+from syncr_backend.constants import DEFAULT_IGNORE
+
 
 def walk_with_ignore(
     path: str, ignore: List[str],
@@ -16,7 +18,10 @@ def walk_with_ignore(
     :param ignore: Patterns to ignore
     :return: An iterator of (dirpath, filename) that are in path but not ignore
     """
+    ignore += DEFAULT_IGNORE
     for (dirpath, _, filenames) in os.walk(path):
+        if any([fnmatch.fnmatch(dirpath, i) for i in ignore]):
+            continue
         for name in filenames:
             if any([fnmatch.fnmatch(name, i) for i in ignore]):
                 continue
