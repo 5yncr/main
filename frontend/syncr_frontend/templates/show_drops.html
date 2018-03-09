@@ -32,7 +32,7 @@
     <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
     <a href="{{ url_for('view_pending_changes', drop_id=selected.name) }}"><button>Pending Changes</button></a>
     <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>
-    <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete</button></a>
+    <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete Drop</button></a>
     <a href="{{ url_for('view_conflicts', drop_id=selected.name) }}"><button>Conflicts</button></a>
   </div>
 {% elif selected and selected.permission == "subscribed" %}
@@ -46,7 +46,7 @@
 
 
 {% block body %}
-{% if selected and action.description == "Current conflicts" %}
+{% if selected and selec_act == "current conflicts" %}
     Current conflicts of drop {{ selected.name|safe }}:
     <table class=file-table>
     {% for file in selected.files %}
@@ -55,12 +55,15 @@
         <th class=file-actions>
           <div class=file-action-container>
             <div class=file-action-button-container>
-              <form class=file-action-button name='conflict_action' action = '' method = 'post'>
-                {% if file.occr == "many" %}
-                <input class=file-action-button type='submit' name='template_for_dropdown' value='template' />
-                {% endif %}
-                <input class=file-action-button type='submit' name='decline_conflict_file' value='decline' />
-                <input class=file-action-button type='submit' name='accept_conflict_file' value='accept' />
+                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
+              <form method="GET" action="{{ url_for('accept_conflict_file', file_path=selected.name, file_name=file.name) }}">
+                <input class=file-action-button type='submit' value='accept'/>
+              </form>
+            </div>
+            <div class=file-action-button-container>
+                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
+              <form method="GET" action="{{ url_for('decline_conflict_file', file_path=selected.name, file_name=file.name) }}">
+                <input class=file-action-button type='submit' value='decline'/>
               </form>
             </div>
           </div>
@@ -68,7 +71,7 @@
       </tr>
     {% endfor %}
     </table>
-{% elif selected and action.description == "view pending changes" %}
+{% elif selected and selec_act == "view pending changes" %}
     Pending changes of drop {{ selected.name| safe }}:
     <table class=file-table>
     {% for file in selected.files %}
@@ -77,9 +80,15 @@
         <th class=file-actions>
           <div class=file-action-container>
             <div class=file-action-button-container>
-              <form class=file-action-button name='change_action' action = '' method = 'post'>
-                <input class=file-action-button type='submit' name='accept_changes' value='accept changes' />
-                <input class=file-action-button type='submit' name='decline_changes' value='decline changes' />
+                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
+              <form method="GET" action="{{ url_for('accept_changes', file_path=selected.name, file_name=file.name) }}">
+                <input class=file-action-button type='submit' value='accept changes'/>
+              </form>
+            </div>
+            <div class=file-action-button-container>
+              <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
+              <form method="GET" action="{{ url_for('decline_changes', file_path=selected.name, file_name=file.name) }}">
+                <input class=file-action-button type='submit' value='decline changes'/>
               </form>
             </div>
           </div>
