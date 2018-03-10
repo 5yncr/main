@@ -10,6 +10,17 @@ from syncr_backend.constants import ERR_INCOMPAT
 from syncr_backend.constants import ERR_NEXIST
 
 
+def send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
+    """
+    Sends a response to a connection and then closes writing to that connection
+    :param conn: socket.accept() connection
+    :param response: Dict[Any, Any] response
+    :return: None
+    """
+    conn.send(bencode.encode(response))
+    conn.shutdown(SHUT_WR)
+
+
 class NotExistException(Exception):
     """Requested object does not exist"""
     pass
