@@ -1,3 +1,6 @@
+# 09/03/2018
+      backend: Implement Send Requests from client to server
+
 # 02/03/2018
       backend: Add sign and verify dictionary functionality (#8)
       backend: Enable shell commands to call node init functions (#12)

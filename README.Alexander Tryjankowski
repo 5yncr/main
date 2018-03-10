@@ -1,3 +1,6 @@
+# 09/03/2018
+      frontend: Update methods for Flask communication (html forms), Implement frontend logic for multiple frontend actions to prepare for socket communication with backend, Plan structure of frontend communication (#8)
+
 # 02/03/2018
       frontend: Implement section for viewing files in a drop, Implement actions for each file that communicate with POST requests (open in OS file viewer/delete file) (#2)
 

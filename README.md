@@ -1,3 +1,8 @@
+# 09/03/2018
+      This week we were all a bit busy due to midterms, but accomplished most
+      of what we set out to do
+
+
 # 02/03/2018
       This week we made progress and stayed on schedule.  We expect that if all
       goes well we will be able to get a bit ahead of schedule next week, and
