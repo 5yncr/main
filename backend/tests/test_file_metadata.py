@@ -1,10 +1,10 @@
 import hashlib
 import tempfile
 
-from syncr_backend.file_metadata import DEFAULT_CHUNK_SIZE
-from syncr_backend.file_metadata import file_hashes
-from syncr_backend.file_metadata import FileMetadata
-from syncr_backend.file_metadata import hash_file
+from syncr_backend.metadata.file_metadata import DEFAULT_CHUNK_SIZE
+from syncr_backend.metadata.file_metadata import file_hashes
+from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import hash_file
 
 
 def test_file_hashes():

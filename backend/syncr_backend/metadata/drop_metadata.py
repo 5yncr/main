@@ -7,13 +7,13 @@ from typing import Tuple
 
 import bencode  # type: ignore
 
-from syncr_backend import crypto_util
-from syncr_backend import node_init
-from syncr_backend import util
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
-from syncr_backend.crypto_util import VerificationException
-from syncr_backend.file_metadata import FileMetadata
-from syncr_backend.file_metadata import make_file_metadata
+from syncr_backend.init import node_init
+from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import make_file_metadata
+from syncr_backend.util import crypto_util
+from syncr_backend.util import fileio_util
+from syncr_backend.util.crypto_util import VerificationException
 
 
 class DropVersion(object):
@@ -242,7 +242,7 @@ def make_drop_metadata(
     metadata
     """
     files = {}
-    for (dirpath, filename) in util.walk_with_ignore(path, ignore):
+    for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)
         files[full_name] = make_file_metadata(full_name)
 

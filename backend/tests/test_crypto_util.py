@@ -1,4 +1,4 @@
-from syncr_backend import crypto_util
+from syncr_backend.util import crypto_util
 
 
 def test_signature():

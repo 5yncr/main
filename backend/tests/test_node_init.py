@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-from syncr_backend import crypto_util
-from syncr_backend import node_init
+from syncr_backend.util import crypto_util
+from syncr_backend.init import node_init
 
 
 def test_node_init():

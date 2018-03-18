@@ -1,11 +1,11 @@
 import base64
 from unittest import mock
 
-from syncr_backend.crypto_util import load_public_key
-from syncr_backend.drop_metadata import DropMetadata
+from syncr_backend.util.crypto_util import load_public_key
+from syncr_backend.metadata.drop_metadata import DropMetadata
 
 
-@mock.patch('syncr_backend.drop_metadata.get_pub_key', autospec=True)
+@mock.patch('syncr_backend.metadata.drop_metadata.get_pub_key', autospec=True)
 def test_drop_metadata_decode(mock_get_pub_key):
 
     i = b"ZDc6ZHJvcF9pZDY0OjpzuM/m8jKyJsEhD5WbMz5HdTRprLdR6ETDH3yoiCRgoa5Jk7"\

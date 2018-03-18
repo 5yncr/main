@@ -6,9 +6,9 @@ from typing import Optional
 
 import bencode  # type: ignore
 
-from syncr_backend import crypto_util
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.util import crypto_util
 
 
 class FileMetadata(object):

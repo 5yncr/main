@@ -1,7 +1,12 @@
+import fnmatch
+import os
+from typing import Iterator
+from typing import List
 from typing import Tuple
 
-from syncr_backend import crypto_util
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
+from syncr_backend.constants import DEFAULT_IGNORE
+from syncr_backend.util import crypto_util
 
 
 def write_chunk(
@@ -62,3 +67,27 @@ def create_file(
     """
     with open(filepath, 'rb') as f:
         f.truncate(size_bytes)
+
+
+def walk_with_ignore(
+    path: str, ignore: List[str],
+) -> Iterator[Tuple[str, str]]:
+    """Walks the files in a directory, while filtering anything that should be
+    ignored.  Implemented on top of os.walk, but instead returns an iterator
+    over (dirpath, filename)
+
+    :param path: The path to walk
+    :param ignore: Patterns to ignore
+    :return: An iterator of (dirpath, filename) that are in path but not ignore
+    """
+    ignore += DEFAULT_IGNORE
+    for (dirpath, _, filenames) in os.walk(path):
+        if any([fnmatch.fnmatch(dirpath, i) for i in ignore]):
+            continue
+        for name in filenames:
+            if any([fnmatch.fnmatch(name, i) for i in ignore]):
+                continue
+            full_name = os.path.join(dirpath, name)
+            if any([fnmatch.fnmatch(full_name, i) for i in ignore]):
+                continue
+            yield (dirpath, name)

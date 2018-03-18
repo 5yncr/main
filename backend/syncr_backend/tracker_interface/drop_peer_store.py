@@ -5,7 +5,9 @@ from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
-from syncr_backend.tracker_util import send_request_to_tracker
+from syncr_backend.tracker_interface.tracker_util import (
+    send_request_to_tracker
+)
 
 
 class DropPeerStore(ABC):
