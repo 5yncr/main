@@ -4,6 +4,8 @@ from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
+from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
+from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
 from syncr_backend.tracker_interface.tracker_util import (
     send_request_to_tracker
 )
@@ -40,7 +42,11 @@ class TrackerKeyStore(PublicKeyStore):
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
         """
-        request = ['POST', self.node_id, key]
+        request = {
+            'request_type': TRACKER_REQUEST_POST_KEY,
+            'node_id': self.node_id,
+            'data': key,
+        }
 
         response = send_request_to_tracker(
             request, self.tracker_ip,
@@ -63,7 +69,10 @@ class TrackerKeyStore(PublicKeyStore):
         :return: boolean (success of getting key),
                 2048 RSA public key (if boolean is True)
         """
-        request = ['GET', request_node_id]
+        request = {
+            'request_type': TRACKER_REQUEST_GET_KEY,
+            'node_id': request_node_id,
+        }
 
         response = send_request_to_tracker(
             request, self.tracker_ip,

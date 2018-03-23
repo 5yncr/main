@@ -10,7 +10,7 @@ from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 
 
 def send_request_to_tracker(
-    request: list, ip: str, port: int,
+    request: Dict[str, Any], ip: str, port: int,
 ) -> Dict[str, Any]:
     """
     Creates a connection with the tracker and sends a given request to the

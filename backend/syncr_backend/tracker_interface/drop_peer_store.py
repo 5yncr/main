@@ -5,6 +5,8 @@ from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import TRACKER_OK_RESULT
+from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
+from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
 from syncr_backend.tracker_interface.tracker_util import (
     send_request_to_tracker
 )
@@ -44,7 +46,11 @@ class TrackerPeerStore(DropPeerStore):
         :param port: port where drop is being hosted
         :return: boolean on success of adding drop peer
         """
-        request = ['POST', drop_id, [self.node_id, ip, port]]
+        request = {
+            'request_type': TRACKER_REQUEST_POST_PEER,
+            'drop_id': drop_id,
+            'data': [self.node_id, ip, port],
+        }
 
         response = send_request_to_tracker(
             request, self.tracker_ip,
@@ -66,7 +72,10 @@ class TrackerPeerStore(DropPeerStore):
         :return: boolean (success on receiving peers),
                 list of [node_id, ip, port]
         """
-        request = ['GET', drop_id]
+        request = {
+            'request_type': TRACKER_REQUEST_GET_PEERS,
+            'drop_id': drop_id,
+        }
 
         response = send_request_to_tracker(
             request, self.tracker_ip,
