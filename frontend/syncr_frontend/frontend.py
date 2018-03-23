@@ -1,13 +1,13 @@
 import platform
 import subprocess
 from os import path
-from tkinter import filedialog
-from tkinter import Tk
 
 from flask import flash
 from flask import Flask
 from flask import render_template
 from flask import request
+from tkinter import filedialog
+from tkinter import Tk
 
 app = Flask(__name__)  # create the application instance
 app.config.from_object(__name__)  # load config from this file , frontend.py
@@ -38,6 +38,7 @@ def send_message(message):
     # TODO: remove when socket communication is setup
     response = {
         'drop_id': message.get('drop_id'),
+        'drop_name': message.get('drop_name'),
         'file_name': message.get('file_name'),
         'file_path': message.get('file_path'),
         'action': message.get('action'),
@@ -309,20 +310,101 @@ def get_file_versions(file_path):
     }
 
 
-# TODO: Get file name from path so that file_name isn't parameter.
-@app.route('/decline_conflict_file/<file_path>/<file_name>')
-def decline_conflict_file(file_path, file_name):
+@app.route('/create_drop')
+def create_drop():
+    """
+    This function provides the UI with the prompt to create a drop
+    :return: response that triggers the UI prompt.
+    """
+
+    set_curr_action('create_drop')
+
+    return show_drops(
+        None,
+        None,
+    )
+
+
+@app.route('/subscribe_to_drop')
+def subscribe_to_drop():
+    """
+    This function provides the UI with the prompt to subscribe to a drop.
+    :return: response that triggers the UI prompt.
+    """
+
+    set_curr_action('subscribe_to_drop')
+
+    return show_drops(
+        None,
+        None,
+    )
+
+
+@app.route('/input_name', methods=['GET', 'POST'])
+def input_name():
+    """
+    After inputting a name, a drop is created with said name.
+    :return: Message sent back to frontend.
+    """
+
+    drop_name = ''
+
+    user_input = request.form.get('inputted_drop_name')
+
+    if user_input is not None:
+        drop_name = user_input
+
+    message = {
+        'action': 'i_n',
+        'drop_name': drop_name,
+    }
+
+    response = send_message(message)
+
+    return show_drops(
+        None,
+        response.get('message') + ' ' + response.get('drop_name'),
+    )
+
+
+@app.route('/input_drop_to_subscribe', methods=['GET', 'POST'])
+def input_drop_to_subscribe():
+    """
+    After inputting a name, user is subscribed to drop if it exists
+    :return: Message sent to frontend.
+    """
+
+    drop_name = ''
+
+    user_input = request.form.get('drop_to_subscribe_to')
+
+    if user_input is not None:
+        drop_name = user_input
+
+    message = {
+        'action': 'i_d_t_s',
+        'drop_name': drop_name,
+    }
+
+    response = send_message(message)
+
+    return show_drops(
+        None,
+        response.get('message') + ' ' + response.get('drop_name'),
+    )
+
+
+@app.route('/decline_conflict_file/<file_path>')
+def decline_conflict_file(file_path):
     """
     Sends 'decline conflict file' command to backend
     :param file_path: path of the declined file
-    :param file_name: name of the declined file
     :return: message sent back to frontend
     """
 
     message = {
         'drop_id': get_drop_id(file_path),
         'file_path': file_path,
-        'file_name': file_name,
         'action': 'd_c_f',
     }
 
@@ -331,24 +413,21 @@ def decline_conflict_file(file_path, file_name):
 
     return show_drops(
         response.get('drop_id'),
-        response.get('message') + " of file " + response.get('file_name'),
+        response.get('message'),
     )
 
 
-# TODO: Get file name from path so that file_name isn't parameter.
-@app.route('/accept_conflict_file/<file_path>/<file_name>')
-def accept_conflict_file(file_path, file_name):
+@app.route('/accept_conflict_file/<file_path>')
+def accept_conflict_file(file_path):
     """
     Sends 'accept conflict file' command to backend
     :param file_path: path of the accepted file
-    :param file_name: name of the accepted file
     :return: message sent back to frontend
     """
 
     message = {
         'drop_id': get_drop_id(file_path),
         'file_path': file_path,
-        'file_name': file_name,
         'action': 'a_c_f',
     }
 
@@ -357,13 +436,12 @@ def accept_conflict_file(file_path, file_name):
 
     return show_drops(
         response.get('drop_id'),
-        response.get('message') + " of file " + response.get('file_name'),
+        response.get('message'),
     )
 
 
-# TODO: Get file name from path so that file_name isn't parameter.
-@app.route('/accept_changes/<file_path>/<file_name>')
-def accept_changes(file_path, file_name):
+@app.route('/accept_changes/<file_path>')
+def accept_changes(file_path):
     """
     Sends 'accept changes' command to backend
     :param file_path: path of file with accepted changes
@@ -374,7 +452,6 @@ def accept_changes(file_path, file_name):
     message = {
         'drop_id': get_drop_id(file_path),
         'file_path': file_path,
-        'file_name': file_name,
         'action': 'a_c',
     }
 
@@ -383,24 +460,21 @@ def accept_changes(file_path, file_name):
 
     return show_drops(
         response.get('drop_id'),
-        response.get('message') + " of file " + response.get('file_name'),
+        response.get('message'),
     )
 
 
-# TODO: Get file name from path so that file_name isn't parameter.
-@app.route('/decline_changes/<file_path>/<file_name>')
-def decline_changes(file_path, file_name):
+@app.route('/decline_changes/<file_path>')
+def decline_changes(file_path):
     """
     Sends 'decline changes' command to backend
     :param file_path: path of file with declined changes
-    :param file_name: name of file with declined changes
     :return: message sent back to frontend
     """
 
     message = {
         'drop_id': get_drop_id(file_path),
         'file_path': file_path,
-        'file_name': file_name,
         'action': 'd_c',
     }
 
@@ -409,7 +483,7 @@ def decline_changes(file_path, file_name):
 
     return show_drops(
         response.get('drop_id'),
-        response.get('message') + " of file " + response.get('file_name'),
+        response.get('message'),
     )
 
 

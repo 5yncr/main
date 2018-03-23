@@ -22,6 +22,15 @@
 </div>
 {% endblock %}
 
+<!--test-->
+
+{% block drop_creation %}
+<div class="btn-group">
+  <a href="{{ url_for('create_drop') }}"><button>Create Drop</button></a>
+  <a href="{{ url_for('subscribe_to_drop') }}"><button>Subscribe to Drop</button></a>
+</div>
+{% endblock %}
+
 
 {% block toolbar %}
 {% if selected and selected.permission == "owned" %}
@@ -85,14 +94,12 @@
         <th class=file-actions>
           <div class=file-action-container>
             <div class=file-action-button-container>
-                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
-              <form method="GET" action="{{ url_for('accept_conflict_file', file_path=selected.name, file_name=file.name) }}">
+              <form method="GET" action="{{ url_for('accept_conflict_file', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='accept'/>
               </form>
             </div>
             <div class=file-action-button-container>
-                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
-              <form method="GET" action="{{ url_for('decline_conflict_file', file_path=selected.name, file_name=file.name) }}">
+              <form method="GET" action="{{ url_for('decline_conflict_file', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='decline'/>
               </form>
             </div>
@@ -110,14 +117,12 @@
         <th class=file-actions>
           <div class=file-action-container>
             <div class=file-action-button-container>
-                <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
-              <form method="GET" action="{{ url_for('accept_changes', file_path=selected.name, file_name=file.name) }}">
+              <form method="GET" action="{{ url_for('accept_changes', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='accept changes'/>
               </form>
             </div>
             <div class=file-action-button-container>
-              <!-- file_path eventually needs to be given the proper value, as it only gets the drop_id for now.-->
-              <form method="GET" action="{{ url_for('decline_changes', file_path=selected.name, file_name=file.name) }}">
+              <form method="GET" action="{{ url_for('decline_changes', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='decline changes'/>
               </form>
             </div>
@@ -150,6 +155,38 @@
         </tr>
     {% endfor %}
     </table>
+{% elif selec_act == "create_drop" %}
+  <table class=file-table>
+    <tr class=file-info-row>
+      <th class=create-prompt>Create a name for your drop: </th>
+      <th class=file-actions>
+        <div class=file-action-container>
+          <div class=file-action-button-container>
+            <form method="GET" action="{{ url_for('input_name') }}">
+              Drop Name: <input type='text' name='inputted_drop_name' />
+              <input class=file-action-button type='submit' value='Create Drop'/>
+            </form>
+          </div>
+        </div>
+      </th>
+    </tr>
+  </table>
+{% elif selec_act == "subscribe_to_drop" %}
+<table class=file-table>
+  <tr class=file-info-row>
+    <th class=create-prompt>Input drop name:</th>
+    <th class=file-actions>
+      <div class=file-action-container>
+        <div class=file-action-button-container>
+          <form method="GET" action="{{ url_for('input_drop_to_subscribe') }}">
+            Drop to Subscribe to: <input type='text' name='drop_to_subscribe_to' />
+            <input class=file-action-button type='submit' value='Subscribe'/>
+          </form>
+        </div>
+      </div>
+    </th>
+  </tr>
+</table>
 {% else %}
     No Drop Selected {{ action.description|safe }}
 {% endif %}

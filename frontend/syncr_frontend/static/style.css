@@ -104,6 +104,13 @@ h2 {
     margin:0;
     width: 80%;
 }
+.create-panel {
+    vertical-align:top;
+    display:inline-block;
+    padding:0;
+    margin:0;
+    width: 80%;
+}
 .file-table {
     width: 100%;
     border-collapse:collapse;
@@ -112,6 +119,10 @@ h2 {
     background-color:gainsboro;
 }
 .file-name {
+    width: auto;
+    text-align: left;
+}
+.create-prompt {
     width: auto;
     text-align: left;
 }

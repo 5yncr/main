@@ -3,7 +3,9 @@
 
 <title>5yncr</title>
 <div class=page>
-    <h1>5yncr</h1>
+    <h1>5yncr
+      <div class=create-panel>{% block drop_creation %}{% endblock %}</div>
+    </h1>
 
     <!-- Flashed Messages For Action Notifications -->
     {% for message in get_flashed_messages() %}
