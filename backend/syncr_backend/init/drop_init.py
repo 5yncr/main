@@ -22,7 +22,10 @@ def initialize_drop(directory: str) -> None:
         owner=node_id,
     )
     drop_m.write_file(
-        os.path.join(directory, DEFAULT_DROP_METADATA_LOCATION),
+        is_latest=True,
+        metadata_location=os.path.join(
+            directory, DEFAULT_DROP_METADATA_LOCATION,
+        ),
     )
     for f_m in files_m.values():
         f_m.write_file(

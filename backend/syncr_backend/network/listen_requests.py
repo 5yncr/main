@@ -2,6 +2,7 @@ import socket
 import sys
 import threading
 from socket import SHUT_RD
+from typing import Optional  # noqa
 
 import bencode  # type: ignore
 
@@ -53,9 +54,14 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     :return: None
     """
     file_location = get_drop_location(request['drop_id'])
-    drop_version = DropVersion(int(request['version']), int(request['nonce']))
+    if request.get('version') is not None and request.get('nonce') is not None:
+        drop_version = DropVersion(
+            int(request['version']), int(request['nonce']),
+        )  # type: Optional[DropVersion]
+    else:
+        drop_version = None
     drop_metadata = DropMetadata.read_file(
-        request['drop_id'], drop_version, file_location,
+        request['drop_id'], file_location, drop_version,
     )
 
     if drop_metadata is None:
