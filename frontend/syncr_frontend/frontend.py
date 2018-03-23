@@ -1,6 +1,8 @@
 import platform
 import subprocess
 from os import path
+from tkinter import filedialog
+from tkinter import Tk
 
 from flask import flash
 from flask import Flask
@@ -47,8 +49,8 @@ def send_message(message):
                 'name': 'O_Drop_1',
                 'version': None,
                 'previous_versions': [],
-                'primary_owner': 'owner_id',
-                'other_owners': [],
+                'primary_owner': 'p_owner_id',
+                'other_owners': ["owner1", "owner2"],
                 'signed_by': 'owner_id',
                 'files': [
                     {'name': 'FileOne'},
@@ -114,6 +116,7 @@ def remove_file(drop_id, file_name):
     )
 
 
+# Return list of owned drop dictionaries
 def get_owned_drops():
     """
     :return: Gets a list of own drop dictionaries
@@ -127,6 +130,7 @@ def get_owned_drops():
     return response.get('requested_drops')
 
 
+# Return list of subscribed drop dictionaries
 def get_subscribed_drops():
     """
     :return: Gets a list of subscribed drop dictionaries
@@ -444,7 +448,14 @@ def add_file(drop_id):
 
     set_curr_action('add file')
 
-    file_path = None  # TODO: implement file picker (tkinter not working)
+    root = Tk()
+    root.filename = filedialog.askopenfilename(
+        initialdir="/", title="Select file",
+        filetypes=[("all files", "*.*")],
+    )
+
+    file_path = root.filename
+    root.destroy()
 
     if file_path is None:
         result = None
@@ -505,16 +516,66 @@ def view_pending_changes(drop_id):
     )
 
 
+@app.route('/view_owners/<drop_id>/add/', methods=['GET', 'POST'])
+def add_owner(drop_id):
+    """
+    Communicate with backend to add an owner to specified drop
+    :param drop_id: ID of drop
+    :return: display updated owners body of page
+    """
+
+    if request.method == 'POST':
+        if request.form.get('owner_id') is None:
+            return view_owners(drop_id)
+
+    message = {
+        'drop_id': drop_id,
+        'owner_id': request.form.get('owner_id'),
+        'action': 'add_owner',
+    }
+
+    response = send_message(message)
+
+    if response.get("Success") is False:
+        return view_owners(drop_id, response.get('message'))
+
+    return view_owners(drop_id)
+
+
+@app.route('/view_owners/<drop_id>/remove/<owner_id>')
+def remove_owner(drop_id, owner_id):
+    """
+    Communicate with backend to remove an owner from specified drop
+    :param drop_id: ID of drop
+    :param owner_id: ID of owner to remove from drop
+    :return: display updated owners body of page
+    """
+
+    message = {
+        'drop_id': drop_id,
+        'owner_id': owner_id,
+        'action': 'remove_owner',
+    }
+
+    response = send_message(message)
+
+    if response.get("Success") is False:
+        return view_owners(drop_id, response.get('message'))
+
+    return view_owners(drop_id)
+
+
 @app.route('/view_owners/<drop_id>')
-def view_owners(drop_id):
+def view_owners(drop_id, message=None):
     """
-    Communicate with backend to retrieve owners
+    Update current action to display list of owners
     :param drop_id: ID of drop to view owners
+    :param message: message from owner action if any
     :return: display owners on body of page
-    gives user option to remove owner if primary owner
     """
-    set_curr_action('view owners')
-    return show_drops(drop_id, "list of owners")
+    set_curr_action('owners')
+
+    return show_drops(drop_id, message)
 
 
 @app.route('/whitelist/<drop_id>')

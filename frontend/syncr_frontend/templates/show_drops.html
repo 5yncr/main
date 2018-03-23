@@ -46,7 +46,37 @@
 
 
 {% block body %}
-{% if selected and selec_act == "current conflicts" %}
+{% if selected and selec_act == "owners" %}
+    Owners of drop {{ selected.name|safe }}:
+    <table class=file-table>
+    <tr class=file-info-row>
+        <th class=file-name>{{ selected.primary_owner|safe }}</th>
+        <th class=file-actions>
+
+        </th>
+      </tr>
+    {% for owner in selected.other_owners %}
+      <tr class=file-info-row>
+        <th class=file-name>{{ owner|safe }}</th>
+        <th class=file-actions>
+          <div class=file-action-container>
+            <div class=file-action-button-container>
+              <div class=file-action-button-container>
+                    <form method="GET" action="{{ url_for('remove_owner', drop_id=selected.name, owner_id=owner) }}">
+                        <input class=file-action-button type='submit' value='remove' />
+                    </form>
+                </div>
+            </div>
+          </div>
+        </th>
+      </tr>
+    {% endfor %}
+    </table>
+    <form method="GET" action="{{ url_for('add_owner', drop_id=selected.name) }}">
+        Owner ID: <input type='text' name='owner_id' />
+        <input class=file-action-button type='submit' value='Add Owner' />
+    </form>
+{% elif selected and selec_act == "current conflicts" %}
     Current conflicts of drop {{ selected.name|safe }}:
     <table class=file-table>
     {% for file in selected.files %}
