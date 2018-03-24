@@ -1,3 +1,8 @@
+# 23/03/2018
+      Unsurprisingly, we didn't get much done over spring break, and are a little
+      behind schedule, but we should get caught up this week
+
+
 # 09/03/2018
       This week we were all a bit busy due to midterms, but accomplished most
       of what we set out to do

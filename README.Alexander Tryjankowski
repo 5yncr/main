@@ -1,3 +1,6 @@
+# 23/03/2018
+      frontend: Create owner template with ability to add, view, and remove owners. Implement preliminary backend communication functions for this view. Create ability to choose files to add to drops using file picker. (#9)
+
 # 09/03/2018
       frontend: Update methods for Flask communication (html forms), Implement frontend logic for multiple frontend actions to prepare for socket communication with backend, Plan structure of frontend communication (#8)
 

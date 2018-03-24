@@ -1,3 +1,7 @@
+# 23/03/2018
+      backend: Refactor and run (#22)
+      notes: This refractor was necessary, and took significantly longer than expected
+
 # 09/03/2018
       backend: Implement Send Requests from client to server
 

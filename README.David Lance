@@ -1,3 +1,9 @@
+# 23/03/2018
+      backend: Update tracker requests to take dicts (#26)
+      tracker: Allow recv to handle larger than buffer size (#7)
+      tracker: Update to dict requests for tracker
+      notes: I also spent some time setting up and debugging tracket<->backend communication
+
 # 09/03/2018
       backend: Add backend server functions
 

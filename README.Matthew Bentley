@@ -1,3 +1,7 @@
+# 23/03/2018
+      backend: Store latest drop versions
+      backend: Create some functions to add an existing drop
+
 # 09/03/2018
       backend: Adds functions to deal with reading and writing files and initializing drops
 
