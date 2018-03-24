@@ -21,12 +21,16 @@ def send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
     conn.shutdown(SHUT_WR)
 
 
-class NotExistException(Exception):
+class SyncrNetworkException(Exception):
+    pass
+
+
+class NotExistException(SyncrNetworkException):
     """Requested object does not exist"""
     pass
 
 
-class IncompatibleProtocolVersionException(Exception):
+class IncompatibleProtocolVersionException(SyncrNetworkException):
     """Version number of the protocol not compatible with request"""
     pass
 

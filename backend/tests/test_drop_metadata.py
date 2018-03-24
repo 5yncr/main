@@ -1,8 +1,8 @@
 import base64
 from unittest import mock
 
-from syncr_backend.util.crypto_util import load_public_key
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.util.crypto_util import load_public_key
 
 
 @mock.patch('syncr_backend.metadata.drop_metadata.get_pub_key', autospec=True)
