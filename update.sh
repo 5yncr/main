@@ -40,7 +40,8 @@ for repo in $(cat .repos); do
         git add .
         # And keep as much info as possible, as well as the original commit id
         printf "$dest: $message\n\n\nOriginal commit: $dest $commit" | \
-            git commit --author="$author <$email>" --date="$d" -F -
+        GIT_COMMITTER_NAME='CommitBot' GIT_COMMITTER_EMAIL='commitbot@mtb.wtf' \
+        git commit --author="$author <$email>" --date="$d" -F -
         popd
     done
     popd
@@ -85,4 +86,4 @@ rm README.md.old
 
 read -p "Now make any necessary changes to README.* files. Press enter to continue"
 git add .
-git commit --author="CommitBot <commitbot@mtb.wtf>" -m "Weekly commit"
+git commit -S --author="CommitBot <commitbot@mtb.wtf>" -m "Weekly commit"
