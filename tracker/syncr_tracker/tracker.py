@@ -1,6 +1,5 @@
 import base64
 import datetime
-import hashlib
 import os
 import socket
 import sys
@@ -17,10 +16,12 @@ from syncr_backend.constants import TRACKER_DROP_NODE_INDEX
 from syncr_backend.constants import TRACKER_DROP_PORT_INDEX
 from syncr_backend.constants import TRACKER_DROP_TIMESTAMP_INDEX
 from syncr_backend.constants import TRACKER_ERROR_RESULT
-from syncr_backend.constants import TRACKER_ID_INDEX
 from syncr_backend.constants import TRACKER_OK_RESULT
-from syncr_backend.constants import TRACKER_TYPE_INDEX
-from syncr_backend.constants import TRACKER_VALUE_INDEX
+from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
+from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
+from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
+from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
+from syncr_backend.util.crypto_util import hash
 
 from syncr_tracker.constants import PUB_KEYS_DIRECTORY
 
@@ -28,80 +29,63 @@ from syncr_tracker.constants import PUB_KEYS_DIRECTORY
 drop_availability = defaultdict(list)
 
 
+# Tracker request structure
+#  {
+#     'request_type': int,
+#     'drop_id' or 'node_id': appropriate sized id,
+#     'data': public 4096 key
+#             or tuple [node_id, ip, port]
+#  }
+
+
 def handle_request(conn, request):
-    """
-    Dispatches GET and POST requests
-    :param conn: TCP socket connection between server and client
-    :param request: [POST/GET, node/drop id, potential value data]
-    :return:
-    """
-    if request[TRACKER_TYPE_INDEX] == 'GET':
-        print('GET request')
-        handle_get(conn, request)
-    elif request[TRACKER_TYPE_INDEX] == 'POST':
-        print('POST request')
-        handle_post(conn, request)
+    function_map = {
+        TRACKER_REQUEST_GET_KEY: retrieve_public_key,
+        TRACKER_REQUEST_POST_KEY: request_post_node_id,
+        TRACKER_REQUEST_GET_PEERS: retrieve_drop_info,
+        TRACKER_REQUEST_POST_PEER: request_post_drop_id,
+    }
+    if not ('request_type' in request):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'request_type missing',
+        )
+    elif request['request_type'] in function_map:
+        t = request['request_type']
+        handle_function = function_map[t]
+
+        handle_function(request, conn)
     else:
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
             'Invalid request type',
         )
-        pass
 
 
-def handle_post(conn, request):
-    """
-    Dispatches POST requests
-    :param conn: TCP socket connection between server and client
-    :param request: [POST, node/drop id, pubkey or node ip port tuple]
-    :return:
-    """
-    if len(request[TRACKER_ID_INDEX]) == NODE_ID_BYTE_SIZE:
-        request_post_node_id(conn, request)
-    elif len(request[TRACKER_ID_INDEX]) == DROP_ID_BYTE_SIZE:
-        request_post_drop_id(conn, request)
-    else:
-        send_server_response(
-            conn, TRACKER_ERROR_RESULT,
-            'Neither valid node nor drop id was provided',
-        )
-
-
-def handle_get(conn, request):
-    """
-    Dispatches GET Requests
-    :param conn: TCP socket connection between server and client
-    :param request: [GET, node/drop id, pubkey or node ip port tuple]
-    :return:
-    """
-    id_type = request[TRACKER_ID_INDEX]
-
-    id_size = len(id_type)
-
-    if id_size == DROP_ID_BYTE_SIZE:
-        retrieve_drop_info(conn, id_type)
-    elif id_size == NODE_ID_BYTE_SIZE:
-        retrieve_public_key(conn, id_type)
-    else:
-        send_server_response(
-            conn, TRACKER_ERROR_RESULT,
-            'Neither valid node nor drop id was provided',
-        )
-
-
-def retrieve_drop_info(conn, drop_id):
+def retrieve_drop_info(conn, request):
     """
     Retrieves all current info related to a drop id.
     :param conn: TCP socket connection between server and client.
-    :param drop_id: Dictionary key, which is also the drop id.
+    :param request: request as received
     :return: list of node ip port tuples without timestamps to the client.
     """
-    if drop_id not in drop_availability:
+    if not ('drop_id' in request):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'drop_id missing',
+        )
+    elif not verify_size(request['drop_id'], DROP_ID_BYTE_SIZE):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'drop_id incorrect size',
+        )
+    elif request['drop_id'] not in drop_availability:
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
             'Drop does not exist or is currently unavailable',
         )
     else:
+        drop_id = request['drop_id']
         truncated_list = []
         trim_expired_tuples(drop_id)
         for tup in drop_availability[drop_id]:
@@ -132,20 +116,30 @@ def trim_expired_tuples(key):
             drop_availability[key].remove(tup)
 
 
-def retrieve_public_key(conn, node_id):
+def retrieve_public_key(conn, request):
     """
     Retrieves the public key paired with the inputted node id.
     :param conn: TCP socket connection between server and client
-    :param node_id: Node ID that is paired with a public key
+    :param request: request dict as recieved
     :return: Message is sent to client with public key, if available
     """
-
-    if not os.path.exists(PUB_KEYS_DIRECTORY):
+    if not ('node_id' in request):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'node_id missing',
+        )
+    elif not os.path.exists(PUB_KEYS_DIRECTORY):
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
             'Public key directory does not exist',
         )
+    elif not verify_size(request['node_id'], NODE_ID_BYTE_SIZE):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'node_id incorrect size',
+        )
     else:
+        node_id = request['node_id']
         len_dir_name = len(PUB_KEYS_DIRECTORY)
         file_name = generate_node_key_file_name(node_id)
         files = os.listdir(PUB_KEYS_DIRECTORY)
@@ -168,16 +162,27 @@ def request_post_node_id(conn, request):
     """
     Adds the pubkey to disk if it is a legal pairing
     :param conn: TCP socket connection between server and client
-    :param request: [POST, node_id, pubkey]
+    :param request: request as received with assumed structure of
+            Tracker request structure
+            {
+                'request_type': int,
+                'drop_id' or 'node_id': appropriate sized id,
+                'data': public 4096 key
+                or tuple [node_id, ip, port]
+            }
     :return:
     """
-    if type(request[TRACKER_VALUE_INDEX]) is not str:
+    if not ('node_id' in request):
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
-            'Proper public key was not provided',
+            'node_id missing',
         )
-    elif request[TRACKER_ID_INDEX] == hashlib\
-            .sha256(request[TRACKER_VALUE_INDEX].encode('utf-8')).digest():
+    elif not verify_size(request['node_id'], NODE_ID_BYTE_SIZE):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'node_id incorrect size',
+        )
+    elif request['node_id'] == hash(request['data']):
         add_node_key_pairing(request)
         print('Node/Key pairing added')
         send_server_response(
@@ -195,42 +200,74 @@ def request_post_node_id(conn, request):
 def add_node_key_pairing(request):
     """
     Adds pubkey to disk
-    :param request: [POST, node_id, pubkey]
+    :param request: request as received with assumed structure of
+            Tracker request structure
+            {
+                'request_type': TRACKER_REQUEST_POST_KEY,
+                'node_id': appropriate sized id,
+                'data': public 4096 key
+            }
     :return:
     """
     if not os.path.exists('pub_keys/'):
         os.makedirs('pub_keys/')
     with open(
-        generate_node_key_file_name(request[TRACKER_ID_INDEX]),
+        generate_node_key_file_name(request['node_id']),
         'wb',
     ) as pub_file:
-        pub_file.write(request[TRACKER_VALUE_INDEX].encode('utf-8'))
+        pub_file.write(request['data'].encode('utf-8'))
+
+
+def verify_size(key, size):
+    """
+    Simple abstraction over checking key sizes
+    :param key: byte[] - node or drop id
+    :param size: int - constant value for given sizes
+    :return: boolean - whether the size matches
+    """
+    return len(key) == size
 
 
 def request_post_drop_id(conn, request):
     """
     Adds node, ip, port tuples to appropriate drops in hashmap
     :param conn: TCP socket connection between server and client
-    :param request: [POST, drop_id, [node_id, IP, port]]
+    :param request: request as received with assumed structure of
+            Tracker request structure
+            {
+                'request_type': TRACKER_REQUEST_POST_PEER,
+                'node_id': appropriate sized id,
+                'data': public [node_id, ip, port]
+            }
     :return:
     """
-    if type(request[TRACKER_VALUE_INDEX]) is not list or \
-            len(request[TRACKER_VALUE_INDEX]) != 3:
+    if not ('drop_id' in request):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'drop_id missing',
+        )
+    elif not verify_size(request['drop_id'], DROP_ID_BYTE_SIZE):
+        send_server_response(
+            conn, TRACKER_ERROR_RESULT,
+            'drop_id incorrect size',
+        )
+    elif type(request['data']) is not list or \
+            len(request['data']) != 3:
         print('Invalid node, IP, port tuple')
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
             'Invalid node, IP, port tuple',
         )
         return
-    request[TRACKER_VALUE_INDEX].append(datetime.datetime.now())
-    drop_availability[request[TRACKER_ID_INDEX]].append(
-        request[TRACKER_VALUE_INDEX],
+    request['data'].append(datetime.datetime.now())
+    drop_availability[request['drop_id']].append(
+        request['data'],
     )
     print(
-        'Drop Availability Updated - ', request[TRACKER_ID_INDEX],
-        '\n\tNode: ', request[TRACKER_VALUE_INDEX][TRACKER_DROP_NODE_INDEX],
-        '\n\tIP: ', request[TRACKER_VALUE_INDEX][TRACKER_DROP_IP_INDEX],
-        '\n\tPort: ', request[TRACKER_VALUE_INDEX][TRACKER_DROP_PORT_INDEX],
+        'Drop Availability Updated - ', request['node_id'],
+        '\n\tNode: ', request['data'][TRACKER_DROP_NODE_INDEX],
+        '\n\tIP: ', request['data'][TRACKER_DROP_IP_INDEX],
+        '\n\tPort: ', request['data'][TRACKER_DROP_PORT_INDEX],
     )
     send_server_response(conn, TRACKER_OK_RESULT, 'Drop availability updated')
 
