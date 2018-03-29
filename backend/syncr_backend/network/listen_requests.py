@@ -1,4 +1,5 @@
 """The recieve side of network communication"""
+import os
 import socket
 import sys
 import threading
@@ -8,15 +9,19 @@ from typing import Optional  # noqa
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
+from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
+from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.util.fileio_util import read_chunk
 from syncr_backend.util.network_util import send_response
 
 
@@ -61,11 +66,13 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
         )  # type: Optional[DropVersion]
     else:
         drop_version = None
-    drop_metadata = DropMetadata.read_file(
-        request['drop_id'], file_location, drop_version,
+    request_drop_metadata = DropMetadata.read_file(
+        request['drop_id'],
+        os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION),
+        drop_version,
     )
 
-    if drop_metadata is None:
+    if request_drop_metadata is None:
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
@@ -73,7 +80,7 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     else:
         response = {
             'status': 'ok',
-            'response': drop_metadata.encode(),
+            'response': request_drop_metadata.encode(),
         }
 
     send_response(conn, response)
@@ -81,49 +88,120 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
 
 def handle_request_file_metadata(request: dict, conn: socket.socket) -> None:
     """
+    Handles a request for a file metadata
     :param request:
     {
     "protocol_version": int,
     "request_type": FILE_METADATA (int),
     "file_id": string
+    'drop_id": string
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    request_file_metadata = get_file_metadata_from_drop_id(
+        request['drop_id'],
+        request['file_id'],
+    )
+
+    if request_file_metadata is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        response = {
+            'status': 'ok',
+            'response': request_file_metadata.encode(),
+        }
+
+    send_response(conn, response)
 
 
 def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
     """
+    Handles a request for a file chunk list avaiable on this node
     :param request:
     {
     "protocol_version": int,
     "request_type": CHUNK_LIST (int),
+    'drop_id": string
     "file_id": string
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    request_file_metadata = get_file_metadata_from_drop_id(
+        request['drop_id'],
+        request['file_id'],
+    )
+
+    if request_file_metadata is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        chunks = request_file_metadata.downloaded_chunks
+        response = {
+            'status': 'ok',
+            'response': list(chunks),
+        }
+
+    send_response(conn, response)
 
 
 def handle_request_chunk(request: dict, conn: socket.socket) -> None:
     """
+    Handles a request for a chunk that is avaliable on this chunk
     :param request:
     {
     "protocol_version": int,
     "request_type": CHUNK (int),
     "file_id": string,
+    'drop_id": string
     "index": string,
     }
     :param conn: socket.accept() connection
     :return: None
     """
-    pass
+    request_file_metadata = get_file_metadata_from_drop_id(
+        request['drop_id'],
+        request['file_id'],
+    )
+    drop_location = drop_metadata.get_drop_location(request['drop_id'])
+    drop_metadata_location = os.path.join(
+        drop_location, DEFAULT_DROP_METADATA_LOCATION,
+    )
+    request_drop_metadata = DropMetadata.read_file(
+        request['drop_id'], drop_metadata_location,
+    )
+
+    if request_file_metadata is None or request_drop_metadata is None:
+        response = {
+            'status': 'error',
+            'error': ERR_NEXIST,
+        }
+    else:
+        file_name = request_drop_metadata.get_file_name_from_id(
+            request['file_id'],
+        )
+        chunk = read_chunk(
+            os.path.join(
+                drop_location, file_name,
+            ), request['index'],
+        )
+        response = {
+            'status': 'ok',
+            'response': chunk,
+        }
+
+    send_response(conn, response)
 
 
-def handle_request_new_drop_metadata(request: dict, conn: socket.socket) \
-        -> None:
+def handle_request_new_drop_metadata(
+    request: dict, conn: socket.socket,
+) -> None:
     """
     :param request:
     {

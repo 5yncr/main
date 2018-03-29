@@ -11,6 +11,7 @@ import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
+from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
@@ -72,6 +73,7 @@ class FileMetadata(object):
         """Read a file metadata file and return FileMetadata
 
         :param file_id: The hash of the file to read
+        :param metadata_location: drop location with default metadata location
         :return: a FileMetadata object or None if it does not exist
         """
         file_name = crypto_util.b64encode(file_id).decode("utf-8")
@@ -216,3 +218,24 @@ def make_file_metadata(filename: str, drop_id: bytes) -> FileMetadata:
     f.close()
 
     return FileMetadata(hashes, file_id, size, drop_id)
+
+
+def get_file_metadata_from_drop_id(
+    drop_id: bytes, file_id: bytes,
+) -> Optional[FileMetadata]:
+    """
+    Gets the file metadata of a file in a drop
+    :param drop_id: bytes for the drop_id that the file is part of
+    :param file_id: bytes for the file_id of desired file_name
+    :return Optional[FileMetadata] of the given file
+    """
+    drop_location = drop_metadata.get_drop_location(drop_id)
+    file_metadata_location = os.path.join(
+        drop_location, DEFAULT_FILE_METADATA_LOCATION,
+    )
+    request_file_metadata = FileMetadata.read_file(
+        file_id,
+        file_metadata_location,
+    )
+
+    return request_file_metadata
