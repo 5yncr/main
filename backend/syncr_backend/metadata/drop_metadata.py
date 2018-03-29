@@ -1,18 +1,16 @@
+"The dorp metadata object and related functions"""
 import os
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import bencode  # type: ignore
 
+from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
 from syncr_backend.init import node_init
-from syncr_backend.metadata.file_metadata import FileMetadata
-from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.util import crypto_util
-from syncr_backend.util import fileio_util
 from syncr_backend.util.crypto_util import VerificationException
 
 
@@ -20,12 +18,16 @@ LATEST = "LATEST"
 
 
 class DropVersion(object):
+    """A drop version"""
 
     def __init__(self, version: int, nonce: int) -> None:
         self.version = version
         self.nonce = nonce
 
     def __iter__(self):
+        """Used for calling dict() on this object, so it becomes
+        {'version': version, 'nonce': nonce}
+        """
         yield 'version', self.version
         yield 'nonce', self.nonce
 
@@ -39,8 +41,9 @@ class DropMetadata(object):
         self, drop_id: bytes, name: str, version: DropVersion,
         previous_versions: List[DropVersion], primary_owner: bytes,
         other_owners: Dict[bytes, int], signed_by: bytes,
-        files: Dict[str, bytes], files_hash: Optional[bytes]=None,
-        sig: Optional[bytes]=None, protocol_version: int=1,
+        files: Dict[str, bytes],
+        files_hash: Optional[bytes]=None, sig: Optional[bytes]=None,
+        protocol_version: int=1,
     ) -> None:
         self.id = drop_id
         self.name = name
@@ -134,6 +137,17 @@ class DropMetadata(object):
             key, self.sig, self.unsigned_header,
         )
 
+    def get_file_name_from_id(self, file_hash) -> str:
+        """Get the file name of a file id
+
+        :param file_hash: the file id
+        :return: the file name string
+        """
+        for (fname, fhash) in self.files.items():
+            if fhash == file_hash:
+                return fname
+        raise FileNotFoundError
+
     @staticmethod
     def make_filename(
         id: bytes, version: Union[str, DropVersion],
@@ -163,6 +177,12 @@ class DropMetadata(object):
         id: bytes, version: DropVersion,
         metadata_location: str,
     ) -> None:
+        """Write the latest version to disk
+
+        :param id: the drop id
+        :param version: the latest version
+        :para metadata_location: where to write it
+        """
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'w') as f:
             to_write = DropMetadata.make_filename(id, version)
@@ -172,6 +192,11 @@ class DropMetadata(object):
     def read_latest(
         id: bytes, metadata_location: str,
     ) -> str:
+        """Read the latest drop version
+
+        :param id: the drop id
+        :param metadata_location: where to find it
+        """
         file_name = DropMetadata.make_filename(id, LATEST)
         with open(os.path.join(metadata_location, file_name), 'r') as f:
             return f.readline()
@@ -246,49 +271,47 @@ class DropMetadata(object):
         return dm
 
 
+def save_drop_location(drop_id: bytes, location: str) -> None:
+    """Save a drops location in the central data dir
+
+    :param drop_id: The unencoded drop id
+    :param location: Where the drop is located on disk
+    """
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    with open(os.path.join(save_path, encoded_drop_id), 'w') as f:
+        f.write(location)
+
+
+def get_drop_location(drop_id: bytes) -> str:
+    """Get a drops location on disk, from the drop id
+
+    :param drop_id: The unencoded drop id
+    :return: The directory the drop is in
+    """
+    save_path = _get_save_path()
+
+    encoded_drop_id = crypto_util.b64encode(drop_id).decode('utf-8')
+
+    with open(os.path.join(save_path, encoded_drop_id), 'r') as f:
+        return f.read()
+
+
+def _get_save_path() -> str:
+    node_info_path = node_init.get_full_init_directory()
+    save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
+    return save_path
+
+
 def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
     raise NotImplementedError()
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:
+    """Geterate a drop id"""
     return first_owner + crypto_util.random_bytes()
-
-
-def make_drop_metadata(
-    path: str,
-    drop_name: str,
-    owner: bytes,
-    other_owners: Dict[bytes, int]={},
-    ignore: List[str]=[],
-) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
-    """Makes drop metadata and file metadatas from a directory
-
-    :param path: The directory to make metadata from
-    :param name: The name of the drop to create
-    :param drop_id: The drop id of the drop metadata, must match the owner
-    :param owner: The owner, must match the drop id
-    :param other_owners: Other owners, may be empty
-    :return: A tuple of the drop metadata, and a dict from file names to file
-    metadata
-    """
-    files = {}
-    for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
-        full_name = os.path.join(dirpath, filename)
-        files[full_name] = make_file_metadata(full_name)
-
-    file_hashes = {
-        os.path.relpath(name, path): m.file_hash for (name, m) in files.items()
-    }
-    drop_id = gen_drop_id(owner)
-    dm = DropMetadata(
-        drop_id=drop_id,
-        name=drop_name,
-        version=DropVersion(1, crypto_util.random_int()),
-        previous_versions=[],
-        primary_owner=owner,
-        other_owners=other_owners,
-        signed_by=owner,
-        files=file_hashes,
-    )
-
-    return (dm, files)

@@ -34,8 +34,8 @@ def test_hash_file():
 
 
 def test_file_metadata_decode():
-    i = b"d10:chunk_sizei8388608e6:chunksl4:01234:1234e9:file_hash4:000011:"\
-        b"file_lengthi100e16:protocol_versioni1ee"
+    i = b'd10:chunk_sizei8388608e6:chunksl4:01234:1234e7:drop_id3:foo7:'\
+        b'file_id4:000011:file_lengthi100e16:protocol_versioni1ee'
 
     f = FileMetadata.decode(i)
 
@@ -45,9 +45,10 @@ def test_file_metadata_decode():
 
 
 def test_file_metadata_encode():
-    i = b"d10:chunk_sizei8388608e6:chunksl4:01234:1234e9:file_hash4:000011:"\
-        b"file_lengthi100e16:protocol_versioni1ee"
+    i = b'd10:chunk_sizei8388608e6:chunksl4:01234:1234e7:drop_id3:foo7:'\
+        b'file_id4:000011:file_lengthi100e16:protocol_versioni1ee'
 
-    f = FileMetadata([b'0123', b'1234'], b'0000', 100)
+    f = FileMetadata([b'0123', b'1234'], b'0000', 100, b'foo')
+    print(f.encode())
 
     assert f.encode() == i

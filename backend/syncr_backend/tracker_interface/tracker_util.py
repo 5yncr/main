@@ -1,3 +1,4 @@
+"""Helper functions for sending tracker requests"""
 import socket
 from socket import SHUT_RD
 from socket import SHUT_WR

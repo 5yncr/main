@@ -1,3 +1,4 @@
+"""The recieve side of network communication"""
 import socket
 import sys
 import threading
@@ -13,9 +14,9 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.init.drop_init import get_drop_location
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
+from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util.network_util import send_response
 
 

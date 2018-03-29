@@ -1,3 +1,4 @@
+"""Functionality to get peers from a peer store"""
 from abc import ABC
 from abc import abstractmethod
 from typing import List
@@ -13,6 +14,7 @@ from syncr_backend.tracker_interface.tracker_util import (
 
 
 class DropPeerStore(ABC):
+    """Abstract base class for communication to send/get peer lists"""
 
     @abstractmethod
     def add_drop_peer(self, drop_id, ip, port):
@@ -24,6 +26,7 @@ class DropPeerStore(ABC):
 
 
 class TrackerPeerStore(DropPeerStore):
+    """Implementation of Peer Store communication using a tracker"""
 
     def __init__(self, node_id: bytes, ip: str, port: int) -> None:
         """

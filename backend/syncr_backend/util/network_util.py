@@ -1,3 +1,4 @@
+"""Helper functions for communicating with other peers"""
 import socket
 from socket import SHUT_WR
 from typing import Any
@@ -22,6 +23,7 @@ def send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
 
 
 class SyncrNetworkException(Exception):
+    """Base exception for network errors"""
     pass
 
 

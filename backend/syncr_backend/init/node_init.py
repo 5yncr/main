@@ -1,3 +1,4 @@
+"""Functions for initializing a new node"""
 import os
 import shutil
 from pathlib import Path

@@ -1,4 +1,4 @@
-# Functions for dealing with hashes/keys/ids in a consistant manner
+"""Functions for dealing with hashes/keys/ids in a consistant manner"""
 import base64
 import hashlib
 import os
@@ -17,6 +17,7 @@ B64_ALT_CHARS = b'+-'
 
 
 class VerificationException(Exception):
+    """To be raised when a hash or signature verification fails"""
     pass
 
 

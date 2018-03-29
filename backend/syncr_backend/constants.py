@@ -1,3 +1,4 @@
+"""Constants!"""
 import os
 
 
@@ -35,6 +36,9 @@ DEFAULT_FILE_METADATA_LOCATION = os.path.join(DEFAULT_INIT_DIR, "files")
 DEFAULT_DROP_METADATA_LOCATION = os.path.join(DEFAULT_INIT_DIR, "drop")
 
 DEFAULT_IGNORE = [DEFAULT_INIT_DIR]
+
+# File constants
+DEFAULT_INCOMPLETE_EXT = ".part"
 
 # Request types
 REQUEST_TYPE_DROP_METADATA = 1

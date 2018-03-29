@@ -1,3 +1,4 @@
+"""Functionality to get public keys from a public key store"""
 from abc import ABC
 from abc import abstractmethod
 from typing import Optional
@@ -12,6 +13,7 @@ from syncr_backend.tracker_interface.tracker_util import (
 
 
 class PublicKeyStore(ABC):
+    """Abstract base class for storage and retrieval of public keys"""
 
     @abstractmethod
     def set_key(self, key):
@@ -23,6 +25,7 @@ class PublicKeyStore(ABC):
 
 
 class TrackerKeyStore(PublicKeyStore):
+    """Tracker based implementation of the public key store"""
 
     def __init__(self, node_id: bytes, ip: str, port: int) -> None:
         """
