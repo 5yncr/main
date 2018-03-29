@@ -54,7 +54,7 @@ def handle_request(conn, request):
         t = request['request_type']
         handle_function = function_map[t]
 
-        handle_function(request, conn)
+        handle_function(conn, request)
     else:
         send_server_response(
             conn, TRACKER_ERROR_RESULT,
@@ -182,7 +182,7 @@ def request_post_node_id(conn, request):
             conn, TRACKER_ERROR_RESULT,
             'node_id incorrect size',
         )
-    elif request['node_id'] == hash(request['data']):
+    elif request['node_id'] == hash(request['data'].encode('utf-8')):
         add_node_key_pairing(request)
         print('Node/Key pairing added')
         send_server_response(
@@ -264,7 +264,7 @@ def request_post_drop_id(conn, request):
         request['data'],
     )
     print(
-        'Drop Availability Updated - ', request['node_id'],
+        'Drop Availability Updated - ', request['drop_id'],
         '\n\tNode: ', request['data'][TRACKER_DROP_NODE_INDEX],
         '\n\tIP: ', request['data'][TRACKER_DROP_IP_INDEX],
         '\n\tPort: ', request['data'][TRACKER_DROP_PORT_INDEX],
