@@ -1,13 +1,14 @@
 import platform
 import subprocess
 from os import path
+from tkinter import filedialog
+from tkinter import Tk
 
+import socket_communication
 from flask import flash
 from flask import Flask
 from flask import render_template
 from flask import request
-from tkinter import filedialog
-from tkinter import Tk
 
 app = Flask(__name__)  # create the application instance
 app.config.from_object(__name__)  # load config from this file , frontend.py
@@ -19,10 +20,10 @@ app.config.update(dict(
 ))
 app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 
-# Backend Access Functions
-
 # Global Variables
 curr_action = ''
+
+# Backend Access Functions
 
 
 def send_message(message):
@@ -34,45 +35,19 @@ def send_message(message):
     display error message. Else display successful message.
     """
 
-    # Example response for initial UI setup
-    # TODO: remove when socket communication is setup
-    response = {
-        'drop_id': message.get('drop_id'),
-        'drop_name': message.get('drop_name'),
-        'file_name': message.get('file_name'),
-        'file_path': message.get('file_path'),
-        'action': message.get('action'),
-        'message': "Generic Message For " + message.get('action'),
-        'success': True,
-        'requested_drops': (
-            {
-                'drop_id': 'o1',
-                'name': 'O_Drop_1',
-                'version': None,
-                'previous_versions': [],
-                'primary_owner': 'p_owner_id',
-                'other_owners': ["owner1", "owner2"],
-                'signed_by': 'owner_id',
-                'files': [
-                    {'name': 'FileOne'},
-                    {'name': 'FileTwo'},
-                    {'name': 'FileThree'},
-                    {'name': 'FileFour'},
-                    {'name': 'Folder'},
-                ],
-            },
-            {
-                'drop_id': 'o2',
-                'name': 'O_Drop_2',
-                'version': None,
-                'previous_versions': [],
-                'primary_owner': 'owner_id',
-                'other_owners': [],
-                'signed_by': 'owner_id',
-                'files': [],
-            },
-        ),
-    }
+    error = None
+
+    sock = socket_communication.Socket.__init__()
+    error = sock.connect()
+    if error is None:
+        error = sock.send_message(message)
+    if error is None:
+        response = sock.receive_message()
+
+    print(response)
+
+    # TODO: add message display in flashed messages section
+
     return response
 
 
