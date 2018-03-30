@@ -10,6 +10,10 @@ from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
 from syncr_backend.util import crypto_util
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def write_chunk(
@@ -32,11 +36,13 @@ def write_chunk(
     :return: None
     """
     if is_complete(filepath):
+        logger.info("file %s already done, not writing", filepath)
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
     if crypto_util.hash(contents) != chunk_hash:
         raise crypto_util.VerificationException()
+    logger.debug("writing chunk with hash %s", chunk_hash)
 
     with open(filepath, 'wb') as f:
         pos_bytes = position * chunk_size
@@ -60,6 +66,7 @@ def read_chunk(
     :return: a double of (contents, hash), both bytes
     """
     if not is_complete(filepath):
+        logger.debug("file %s not done, adding extention", filepath)
         filepath += DEFAULT_INCOMPLETE_EXT
 
     with open(filepath, 'rb') as f:
@@ -69,6 +76,7 @@ def read_chunk(
 
     h = crypto_util.hash(data)
     if file_hash is not None:
+        logger.info("input file_hash is not None, checking")
         if h != file_hash:
             raise crypto_util.VerificationException()
     return (data, h)
@@ -90,12 +98,14 @@ def create_file(
     new_path = filepath + DEFAULT_INCOMPLETE_EXT
     try:
         if is_complete(filepath):
+            logger.info("file %s is done, moving it to be not done", filepath)
             os.replace(filepath, new_path)
     except FileNotFoundError:
         pass
 
     filepath = new_path
     with open(filepath, 'wb') as f:
+        logger.debug("truncating %s ot %s bytes", filepath, size_bytes)
         f.truncate(size_bytes)
 
 
@@ -108,6 +118,7 @@ def mark_file_complete(filepath: str) -> None:
     :param filepath: The path of the file, without the extension
     :return: None
     """
+    logger.debug("marking %s done", filepath)
     old_file = filepath + DEFAULT_INCOMPLETE_EXT
     os.rename(old_file, filepath)
 
@@ -123,9 +134,12 @@ def is_complete(filepath: str) -> bool:
     """
     unfinished_path = filepath + DEFAULT_INCOMPLETE_EXT
     if os.path.isfile(unfinished_path):
+        logger.debug("file %s is not done", unfinished_path)
         return False
     if os.path.isfile(filepath):
+        logger.debug("file %s is done", filepath)
         return True
+    logger.error("file %s not found", filepath)
     raise FileNotFoundError(filepath)
 
 

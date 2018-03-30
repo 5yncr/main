@@ -13,6 +13,11 @@ from cryptography.hazmat.primitives import serialization  # type: ignore
 from cryptography.hazmat.primitives.asymmetric import padding  # type: ignore
 from cryptography.hazmat.primitives.asymmetric import rsa  # type: ignore
 
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
+
 B64_ALT_CHARS = b'+-'
 
 
@@ -27,16 +32,18 @@ def hash(b: bytes) -> bytes:
     :param b: The bytes to hash
     :return: The hash of b
     """
+    logger.debug("hashing bytes of len %s", len(b))
     return hashlib.sha256(b).digest()
 
 
-def hash_dict(b: Dict[str, Any]) -> bytes:
+def hash_dict(d: Dict[str, Any]) -> bytes:
     """Hash a dictionary, by first bencoding it
 
     :param b: The dictionary to hash
     :return: The hash of bencode(b)
     """
-    return hash(bencode.encode(b))
+    logger.debug("hashing dict of len %s", len(d))
+    return hash(bencode.encode(d))
 
 
 def b64encode(b: bytes) -> bytes:

@@ -6,6 +6,10 @@ from typing import Optional
 
 from syncr_backend.constants import DEFAULT_INIT_DIR
 from syncr_backend.util import crypto_util
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def force_initialize_node(init_directory: Optional[str]=None) -> None:
@@ -16,6 +20,7 @@ def force_initialize_node(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
+    logger.warning("forcing node initialization of %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(full_directory):
@@ -31,6 +36,7 @@ def delete_node_directory(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
+    logger.info("deleting node directory %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(full_directory):
@@ -57,9 +63,13 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
+    logger.info("initializing node in %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(full_directory):
+        logger.error(
+            "tried to initialize over existing node dir %s", init_directory,
+        )
         raise FileExistsError
 
     os.makedirs(full_directory)
@@ -88,6 +98,7 @@ def write_private_key_to_disk(
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
+    logger.debug("writing private key")
     full_directory = get_full_init_directory(init_directory)
 
     if os.path.exists(os.path.join(full_directory, "private_key.pem")):
@@ -110,6 +121,7 @@ def load_private_key_from_disk(
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
+    logger.debug("reading private key")
     full_directory = get_full_init_directory(init_directory)
 
     with open(

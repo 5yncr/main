@@ -22,7 +22,11 @@ from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
 from syncr_backend.util.fileio_util import read_chunk
+from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
+
+
+logger = get_logger(__name__)
 
 
 def request_dispatcher(request: dict, conn: socket.socket) -> None:
@@ -39,8 +43,9 @@ def request_dispatcher(request: dict, conn: socket.socket) -> None:
         REQUEST_TYPE_CHUNK: handle_request_chunk,
         REQUEST_TYPE_NEW_DROP_METADATA: handle_request_new_drop_metadata,
     }
-    type = request['request_type']
-    handle_function = function_map[type]
+    req_type = request['request_type']
+    logger.info("incomming request type: %s", req_type)
+    handle_function = function_map[req_type]
 
     handle_function(request, conn)
 
@@ -74,11 +79,13 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     )
 
     if request_drop_metadata is None:
+        logger.info("drop metadata not found, sending error")
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
         }
     else:
+        logger.info("sending drop metadata")
         response = {
             'status': 'ok',
             'response': request_drop_metadata.encode(),
@@ -106,11 +113,13 @@ def handle_request_file_metadata(request: dict, conn: socket.socket) -> None:
     )
 
     if request_file_metadata is None:
+        logger.info("file metadata not found, sending error")
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
         }
     else:
+        logger.info("sending file metadata")
         response = {
             'status': 'ok',
             'response': request_file_metadata.encode(),
@@ -138,12 +147,14 @@ def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
     )
 
     if request_file_metadata is None:
+        logger.info("file metadata not found, sending error")
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
         }
     else:
         chunks = request_file_metadata.downloaded_chunks
+        logger.info("sending chunk list")
         response = {
             'status': 'ok',
             'response': list(chunks),
@@ -179,6 +190,7 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
     )
 
     if request_file_metadata is None or request_drop_metadata is None:
+        logger.info("chunk not found")
         response = {
             'status': 'error',
             'error': ERR_NEXIST,
@@ -192,12 +204,12 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
                 drop_location, file_name,
             ), request['index'],
         )[0]
+        logger.info("sending chunk")
         response = {
             'status': 'ok',
             'response': chunk,
         }
 
-    print(response)
     send_response(conn, response)
 
 
@@ -215,6 +227,7 @@ def handle_request_new_drop_metadata(
     :param conn: socket.accept() connection
     :return: None
     """
+    logger.warning("tried and failed to accept a new_drop_metadata request")
     pass
 
 
@@ -231,13 +244,13 @@ def listen_requests(
     :return:
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    logger.info("Binding to %s:%s", tcp_ip, tcp_port)
     s.bind((tcp_ip, int(tcp_port)))
     s.listen(5)
 
     while not shutdown_flag.is_set():
         conn, addr = s.accept()
-        print(type(conn))
-        print('Connection address:', addr)
+        logger.info('Connection address:', addr)
         request = b''
         while 1:
             data = conn.recv(DEFAULT_BUFFER_SIZE)
@@ -245,7 +258,7 @@ def listen_requests(
                 break
             else:
                 request += data
-            print('Data received')
+            logger.info('Data received')
         conn.shutdown(SHUT_RD)
         request_dispatcher(bencode.decode(request), conn)
         conn.close()

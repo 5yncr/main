@@ -1,5 +1,6 @@
 """The file metadata object and related functions"""
 import hashlib
+import logging
 import os
 from math import ceil
 from typing import BinaryIO
@@ -16,6 +17,10 @@ from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class FileMetadata(object):
@@ -36,6 +41,15 @@ class FileMetadata(object):
         self.num_chunks = ceil(file_length / chunk_size)
         self.drop_id = drop_id
         self._save_dir = None  # type: Optional[str]
+
+    @property
+    def log(self) -> logging.Logger:
+        return get_logger(
+            '.'.join([
+                __name__, self.__class__.__name__,
+                crypto_util.b64encode(self.file_id).decode('utf-8'),
+            ]),
+        )
 
     def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
@@ -59,6 +73,7 @@ class FileMetadata(object):
 
         :param metadata_location: where to save it
         """
+        self.log.debug("writing file")
         file_name = crypto_util.b64encode(self.file_id).decode("utf-8")
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
@@ -76,6 +91,7 @@ class FileMetadata(object):
         :param metadata_location: drop location with default metadata location
         :return: a FileMetadata object or None if it does not exist
         """
+        logger.debug("reading from file")
         file_name = crypto_util.b64encode(file_id).decode("utf-8")
         if not os.path.exists(os.path.join(metadata_location, file_name)):
             return None
@@ -120,6 +136,7 @@ class FileMetadata(object):
 
         :return: A set of chunk ids already downloaded
         """
+        self.log.debug("calculating downloaded chunks")
         # TODO: what if not exist
         dm = DropMetadata.read_file(
             id=self.drop_id,
@@ -140,6 +157,7 @@ class FileMetadata(object):
             )
             if h == self.hashes[chunk_idx]:
                 downloaded_chunks.add(chunk_idx)
+        self.log.debug("calculated downloaded chunks: %s", downloaded_chunks)
         return downloaded_chunks
 
     @property
@@ -163,6 +181,7 @@ class FileMetadata(object):
         return all_chunks - self.downloaded_chunks
 
     def finish_chunk(self, chunk_id: int) -> None:
+        self.log.debug("finishing chunks %s", chunk_id)
         self.downloaded_chunks.add(chunk_id)
 
 

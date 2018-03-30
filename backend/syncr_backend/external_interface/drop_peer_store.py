@@ -20,6 +20,10 @@ from syncr_backend.external_interface.store_exceptions import \
 from syncr_backend.external_interface.tracker_util import \
     send_request_to_tracker
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
@@ -97,11 +101,10 @@ class TrackerPeerStore(DropPeerStore):
             request, self.tracker_ip,
             self.tracker_port,
         )
+        logger.debug("tracker add peer response: %s", response)
         if response.get('result') == TRACKER_OK_RESULT:
-            print(response.get('message'))
             return True
         else:
-            print(response.get('message'))
             return False
 
     def request_peers(
@@ -122,9 +125,8 @@ class TrackerPeerStore(DropPeerStore):
             request, self.tracker_ip,
             self.tracker_port,
         )
+        logger.debug("tracker get peers response: %s", response)
         if response.get('result') == TRACKER_OK_RESULT:
-            print(response.get('message'))
             return True, response.get('data')
         else:
-            print(response.get('message'))
             return False, list()

@@ -49,6 +49,5 @@ def test_file_metadata_encode():
         b'file_id4:000011:file_lengthi100e16:protocol_versioni1ee'
 
     f = FileMetadata([b'0123', b'1234'], b'0000', 100, b'foo')
-    print(f.encode())
 
     assert f.encode() == i

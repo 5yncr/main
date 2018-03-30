@@ -16,9 +16,12 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import network_util
+from syncr_backend.util.log_util import get_logger
 
 
 R = TypeVar('R')
+
+logger = get_logger(__name__)
 
 
 def do_request(
@@ -36,7 +39,10 @@ def do_request(
     :return: The return of a successful call to request_fun
     """
     result = None
-    last_err = Exception("No peers contacted")
+    last_err = Exception("This shouldn't happen")
+    if not peers:
+        logger.error("no peers provided to do_request")
+        raise network_util.NoPeersException("no peers provided to do_request")
 
     for (ip, port) in peers:
         try:
@@ -48,6 +54,7 @@ def do_request(
             break
 
     if result is None:
+        logger.error("no good results from peers")
         raise last_err
 
     return result
@@ -83,6 +90,7 @@ def send_drop_metadata_request(
         ip,
         port,
     )
+    logger.debug("recieved drop metadata")
     return DropMetadata.decode(drop_metadata_bytes)
 
 
@@ -114,6 +122,7 @@ def send_file_metadata_request(
         ip,
         port,
     )
+    logger.debug("recieved file metadata")
     return FileMetadata.decode(file_metadata_bytes)
 
 
@@ -145,6 +154,7 @@ def send_chunk_list_request(
         ip,
         port,
     )
+    logger.debug("recieved chunk list")
     return chunk_index_list
 
 
@@ -179,4 +189,5 @@ def send_chunk_request(
         ip,
         port,
     )
+    logger.debug("recieved chunk")
     return chunk.encode('utf-8')

@@ -17,6 +17,10 @@ from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def sync_drop(drop_id: bytes, save_dir: str):
@@ -107,6 +111,11 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     :param save_dir: where to download the drop to
     """
 
+    logger.info(
+        "Adding drop from id %s to %s", crypto_util.b64encode(
+            drop_id,
+        ), save_dir,
+    )
     os.makedirs(
         os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION), exist_ok=True,
     )
@@ -127,12 +136,14 @@ def get_drop_metadata(
     :param peers: where to look on the network for data
     :return: A drop metadata object
     """
+    logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
     metadata = None
     if save_dir is not None:
         metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
         metadata = DropMetadata.read_file(drop_id, metadata_dir)
 
     if metadata is None:
+        logger.debug("drop metadata not on disk, getting from network")
         metadata = send_requests.do_request(
             request_fun=send_requests.send_drop_metadata_request,
             peers=peers,
@@ -157,9 +168,11 @@ def get_file_metadata(
     :param peers: where to look on the network for data
     :return: A file metadata object
     """
+    logger.info("getting file metadata for %s", crypto_util.b64encode(file_id))
     metadata_dir = os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION)
     metadata = FileMetadata.read_file(file_id, metadata_dir)
     if metadata is None:
+        logger.debug("file metadata not on disk, getting from network")
         metadata = send_requests.do_request(
             request_fun=send_requests.send_file_metadata_request,
             peers=peers,
@@ -183,6 +196,7 @@ def sync_drop_contents(
     :param peers: where to look for chunks
     :return: A set of chunk ids NOT downloaded
     """
+    logger.info("syncing contents of file %s", crypto_util.b64encode(file_id))
     file_metadata = get_file_metadata(drop_id, file_id, save_dir, peers)
     drop_metadata = get_drop_metadata(drop_id, peers)
     file_name = drop_metadata.get_file_name_from_id(file_metadata.file_id)
@@ -191,6 +205,7 @@ def sync_drop_contents(
     fileio_util.create_file(full_path, file_metadata.file_length)
 
     for ip, port in peers:
+        logger.debug("trying peer %s", ip)
         needed_chunks = file_metadata.needed_chunks
         avail_chunks = send_requests.send_chunk_list_request(
             ip=ip,
@@ -199,13 +214,12 @@ def sync_drop_contents(
             file_id=file_id,
         )
         avail_set = set(avail_chunks)
-        print(avail_set)
-        print(needed_chunks)
         can_get_from_peer = avail_set & needed_chunks
-        print("can get: %s" % can_get_from_peer)
         if not can_get_from_peer:
+            logger.debug("no chunks available, skipping")
             continue
         for cid in can_get_from_peer:
+            logger.debug("trying to download chunk %s from %s", cid, ip)
             chunk = send_requests.send_chunk_request(
                 ip=ip,
                 port=port,
@@ -213,7 +227,6 @@ def sync_drop_contents(
                 file_id=file_id,
                 file_index=cid,
             )
-            print("chunk: %s" % chunk)
             try:
                 fileio_util.write_chunk(
                     filepath=full_path,
@@ -223,8 +236,11 @@ def sync_drop_contents(
                 )
                 file_metadata.finish_chunk(cid)
                 needed_chunks -= {cid}
-            except crypto_util.VerificationException:
-                print("verification exception")
+            except crypto_util.VerificationException as e:
+                logger.warning(
+                    "verification exception (%s) from peer %s, skipping",
+                    e, ip,
+                )
                 break
 
     return needed_chunks

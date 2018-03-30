@@ -8,6 +8,10 @@ from typing import Dict
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def send_request_to_tracker(
@@ -39,5 +43,6 @@ def send_request_to_tracker(
 
         return bencode.decode(response)
     except socket.timeout:
+        logger.error("Tracker timeout")
         s.close()
         raise TimeoutError('ERROR: Tracker server timeout')

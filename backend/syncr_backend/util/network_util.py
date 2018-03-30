@@ -9,6 +9,10 @@ import bencode  # type: ignore
 from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import ERR_INCOMPAT
 from syncr_backend.constants import ERR_NEXIST
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def send_response(conn: socket.socket, response: Dict[Any, Any]) -> None:
@@ -37,10 +41,16 @@ class IncompatibleProtocolVersionException(SyncrNetworkException):
     pass
 
 
+class NoPeersException(SyncrNetworkException):
+    """No peers found or provided to a request function"""
+    pass
+
+
 def raise_network_error(
     errno: int,
 ) -> None:
     """Raises an error based on the errno"""
+    logger.debug("Raising exception %s", errno)
     exceptionmap = {
         ERR_NEXIST: NotExistException,
         ERR_INCOMPAT: IncompatibleProtocolVersionException,
@@ -74,8 +84,10 @@ def send_request_to_node(
 
         response = bencode.decode(data)
         if (response['status'] == 'ok'):
+            logger.debug("sending OK")
             return response['response']
         else:
+            logger.debug("sending error")
             raise_network_error(response['error'])
 
     except socket.timeout:

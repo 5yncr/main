@@ -23,6 +23,10 @@ from syncr_backend.external_interface.tracker_util import (
     send_request_to_tracker
 )
 from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
@@ -96,11 +100,10 @@ class TrackerKeyStore(PublicKeyStore):
             request, self.tracker_ip,
             self.tracker_port,
         )
+        logger.debug("tracker set key response: %s", response)
         if response.get('result') == TRACKER_OK_RESULT:
-            print(response.get('message'))
             return True
         else:
-            print(response.get('message'))
             return False
 
     def request_key(
@@ -122,9 +125,8 @@ class TrackerKeyStore(PublicKeyStore):
             request, self.tracker_ip,
             self.tracker_port,
         )
+        logger.debug("tracker get key response: %s", response)
         if response.get('result') == TRACKER_OK_RESULT:
-            print(response.get('message'))
             return True, response.get('data')
         else:
-            print(response.get('message'))
             return False, 'NO PUBLIC KEY AVAILABLE'

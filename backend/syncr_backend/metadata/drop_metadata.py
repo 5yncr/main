@@ -1,4 +1,5 @@
 "The dorp metadata object and related functions"""
+import logging
 import os
 from typing import Any
 from typing import Dict
@@ -19,9 +20,12 @@ from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import load_public_key
 from syncr_backend.util.crypto_util import node_id_from_private_key
 from syncr_backend.util.crypto_util import VerificationException
+from syncr_backend.util.log_util import get_logger
 
 
 LATEST = "LATEST"
+
+logger = get_logger(__name__)
 
 
 class DropVersion(object):
@@ -65,6 +69,15 @@ class DropMetadata(object):
         self._files_hash = files_hash
 
     @property
+    def log(self) -> logging.Logger:
+        return get_logger(
+            '.'.join([
+                __name__, self.__class__.__name__,
+                crypto_util.b64encode(self.id).decode('utf-8'),
+            ]),
+        )
+
+    @property
     def files_hash(self) -> bytes:
         """Generate the hash of the files dictionary
 
@@ -87,10 +100,12 @@ class DropMetadata(object):
         good or has not been set
         """
         if self._files_hash is None:
+            self.log.error("no files hash found when verifying")
             raise VerificationException()
         given = self._files_hash
         expected = self._gen_files_hash()
         if given != expected:
+            self.log.error("files verification failed!")
             raise VerificationException()
 
     @property
@@ -126,6 +141,7 @@ class DropMetadata(object):
         """
         h = self.unsigned_header
         if self.sig is None:
+            self.log.debug("signing header")
             key = node_init.load_private_key_from_disk()
             self.sig = crypto_util.sign_dictionary(key, h)
         h["header_signature"] = self.sig
@@ -138,6 +154,7 @@ class DropMetadata(object):
         invalid throws an exception
         """
         if self.sig is None:
+            self.log.error("header signature not found when verifying")
             raise VerificationException()
         key = get_pub_key(self.signed_by)
         crypto_util.verify_signed_dictionary(
@@ -153,6 +170,8 @@ class DropMetadata(object):
         for (fname, fhash) in self.files.items():
             if fhash == file_hash:
                 return fname
+
+        self.log.error("tried to lookup a file that doesn't exist")
         raise FileNotFoundError
 
     @staticmethod
@@ -171,6 +190,7 @@ class DropMetadata(object):
         :param metadata_location: where to write to disk
         :return: None
         """
+        self.log.debug("writing file")
         file_name = DropMetadata.make_filename(self.id, self.version)
         if not os.path.exists(metadata_location):
             os.makedirs(metadata_location)
@@ -221,14 +241,23 @@ class DropMetadata(object):
         :param metadata_location: where to look for the file
         :return: A DropMetadata object, or maybe None
         """
+        logger.debug("reading from file")
         if version is None:
             file_name = DropMetadata.read_latest(id, metadata_location)
         else:
             file_name = DropMetadata.make_filename(id, version)
         if file_name is None:
+            logger.warning(
+                "latest drop metadata not found for %s",
+                crypto_util.b64encode(id),
+            )
             return None
 
         if not os.path.isfile(os.path.join(metadata_location, file_name)):
+            logger.warning(
+                "drop metadata not found for %s",
+                crypto_util.b64encode(id),
+            )
             return None
 
         with open(os.path.join(metadata_location, file_name), 'rb') as f:

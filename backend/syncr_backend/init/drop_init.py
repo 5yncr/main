@@ -15,6 +15,10 @@ from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.log_util import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def initialize_drop(directory: str) -> None:
@@ -23,6 +27,7 @@ def initialize_drop(directory: str) -> None:
 
     :param directory: The directory to initialize a drop from
     """
+    logger.info("initializing drop in dir %s", directory)
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
     (drop_m, files_m) = make_drop_metadata(
@@ -41,6 +46,7 @@ def initialize_drop(directory: str) -> None:
             os.path.join(directory, DEFAULT_FILE_METADATA_LOCATION),
         )
     save_drop_location(drop_m.id, directory)
+    logger.info("drop initialized with %s files", len(files_m))
 
 
 def make_drop_metadata(
@@ -60,6 +66,7 @@ def make_drop_metadata(
     :return: A tuple of the drop metadata, and a dict from file names to file
     metadata
     """
+    logger.info("creating drop metadata for drop name %s", drop_name)
     drop_id = drop_metadata.gen_drop_id(owner)
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
@@ -80,4 +87,5 @@ def make_drop_metadata(
         files=file_hashes,
     )
 
+    logger.debug("metadata generated with %s files", len(files))
     return (dm, files)
