@@ -1,3 +1,6 @@
+# 30/03/2018
+      frontend: Create initial socket communication implementation on frontend side, modify existing frontend data structures to match backend system (#11)
+
 # 23/03/2018
       frontend: Create owner template with ability to add, view, and remove owners. Implement preliminary backend communication functions for this view. Create ability to choose files to add to drops using file picker. (#9)
 

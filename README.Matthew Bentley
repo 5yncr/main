@@ -1,3 +1,7 @@
+# 30/03/2018
+      backend: Initial code to actually download a drop from a peer
+      backend: Add logging functions and use them throughout the code
+
 # 23/03/2018
       backend: Store latest drop versions
       backend: Create some functions to add an existing drop

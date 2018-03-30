@@ -1,3 +1,7 @@
+# 30/03/2018
+      backend: Adds Drop Functionality (#32)
+      backend: Add request peers function
+
 # 23/03/2018
       backend: Refactor and run (#22)
       notes: This refractor was necessary, and took significantly longer than expected

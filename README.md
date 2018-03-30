@@ -1,3 +1,9 @@
+# 30/03/2018
+      This week we got file transfer actually working (in a non-real-world
+      setting), continued integration between frontend and backend, added
+      logging, and made a lot of smaller changes
+
+
 # 23/03/2018
       Unsurprisingly, we didn't get much done over spring break, and are a little
       behind schedule, but we should get caught up this week

@@ -1,3 +1,9 @@
+# 30/03/2018
+      backend: Add request listening (#29)
+      backend: Fix bugs to allow for initial setup (#31)
+      backend: Add PKS and DPS creation and pub_key requesting (#34)
+      tracker: Fix typo (#9)
+
 # 23/03/2018
       backend: Update tracker requests to take dicts (#26)
       tracker: Allow recv to handle larger than buffer size (#7)

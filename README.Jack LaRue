@@ -1,3 +1,8 @@
+# 30/03/2018
+      backend: Implement skeleton for frontend action handling (#33)
+      frontend: Fix text input for creating / subscribing to drops. Reformatted action types for consistency. (#12)
+      notes: This week I shifted focus from UI work to setting up frontend to backend communication, which involved work in both the frontend and backend repositories.
+
 # 23/03/2018
       frontend: Frontend logic skeleton implemented for subscribing to and creating drops. Issue fixed from previous submission. (#10)
       notes: I decided to focus more so on the paper this week than the code. As a result, there are still a few UI tasks that need to be completed on my end. The schedule will be updated to reflect this.
