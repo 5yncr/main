@@ -8,7 +8,7 @@ setup(
         'syncr_backend.util',
         'syncr_backend.metadata',
         'syncr_backend.init',
-        'syncr_backend.tracker_interface',
+        'syncr_backend.external_interface',
     ],
     license='AGPLv3',
 )

@@ -1,15 +1,56 @@
 """Functionality to get public keys from a public key store"""
+import json
+import os
 from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 from typing import Tuple
 
+from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
 from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
-from syncr_backend.tracker_interface.tracker_util import (
+from syncr_backend.external_interface.store_exceptions import (
+    IncompleteConfigError
+)
+from syncr_backend.external_interface.store_exceptions import (
+    MissingConfigError
+)
+from syncr_backend.external_interface.store_exceptions import (
+    UnsupportedOptionError
+)
+from syncr_backend.external_interface.tracker_util import (
     send_request_to_tracker
 )
+from syncr_backend.init.node_init import get_full_init_directory
+
+
+def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
+    """
+    Provides a PublicKeyStore either by means of DHT or tracker depending
+    on config file
+    :return: PublicKeyStore
+    """
+    init_directory = get_full_init_directory(None)
+    pks_config_path = os.path.join(init_directory, DEFAULT_PKS_CONFIG_FILE)
+
+    if not os.path.isfile(pks_config_path):
+        raise MissingConfigError()
+
+    config_file = json.load(open(pks_config_path))
+
+    try:
+        if config_file['type'] == 'tracker':
+            pks = TrackerKeyStore(
+                node_id, config_file['ip'], int(config_file['port']),
+            )
+            return pks
+        elif config_file['type'] == 'dht':
+            raise NotImplementedError()
+        else:
+            raise UnsupportedOptionError()
+    except KeyError:
+        raise IncompleteConfigError()
 
 
 class PublicKeyStore(ABC):

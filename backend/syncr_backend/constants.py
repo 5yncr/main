@@ -28,6 +28,9 @@ TRACKER_ERROR_RESULT = 'ERROR'
 
 # Node init constants
 DEFAULT_INIT_DIR = ".5yncr"
+DEFAULT_PUB_KEY_LOOKUP_LOCATION = "pub_keys"
+DEFAULT_PKS_CONFIG_FILE = "PublicKeyStore.config"
+DEFAULT_DPS_CONFIG_FILE = "DropPeerStore.config"
 DEFAULT_METADATA_LOOKUP_LOCATION = "drops"
 
 # file_metadata constants

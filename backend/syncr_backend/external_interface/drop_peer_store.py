@@ -1,16 +1,54 @@
 """Functionality to get peers from a peer store"""
+import json
+import os
 from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
 from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
-from syncr_backend.tracker_interface.tracker_util import (
+from syncr_backend.external_interface.store_exceptions import \
+    IncompleteConfigError
+from syncr_backend.external_interface.store_exceptions import \
+    MissingConfigError
+from syncr_backend.external_interface.store_exceptions import \
+    UnsupportedOptionError
+from syncr_backend.external_interface.tracker_util import \
     send_request_to_tracker
-)
+from syncr_backend.init.node_init import get_full_init_directory
+
+
+def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
+    """
+    Provides a DropPeerStore either by means of DHT or tracker depending
+    on config file
+    :param node_id: bytes of the node id for this node
+    :return: DropPeerStore
+    """
+    init_directory = get_full_init_directory(None)
+    dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)
+
+    if not os.path.isfile(dps_config_path):
+        raise MissingConfigError()
+
+    config_file = json.load(open(dps_config_path))
+
+    try:
+        if config_file['type'] == 'tracker':
+            pks = TrackerPeerStore(
+                node_id, config_file['ip'], int(config_file['port']),
+            )
+            return pks
+        elif config_file['type'] == 'dht':
+            raise NotImplementedError()
+        else:
+            raise UnsupportedOptionError()
+    except KeyError:
+        raise IncompleteConfigError()
 
 
 class DropPeerStore(ABC):

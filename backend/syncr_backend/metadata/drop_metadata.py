@@ -9,8 +9,15 @@ from typing import Union
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_METADATA_LOOKUP_LOCATION
+from syncr_backend.constants import DEFAULT_PUB_KEY_LOOKUP_LOCATION
+from syncr_backend.external_interface.public_key_store import \
+    get_public_key_store
 from syncr_backend.init import node_init
+from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.util import crypto_util
+from syncr_backend.util.crypto_util import load_public_key
+from syncr_backend.util.crypto_util import node_id_from_private_key
 from syncr_backend.util.crypto_util import VerificationException
 
 
@@ -271,7 +278,7 @@ class DropMetadata(object):
             sig=decoded["header_signature"],
         )
         dm.verify_files_hash()
-#        dm.verify_header() TODO: fix
+        dm.verify_header()
         return dm
 
 
@@ -312,8 +319,49 @@ def _get_save_path() -> str:
     return save_path
 
 
-def get_pub_key(nodeid: bytes) -> crypto_util.rsa.RSAPublicKey:
-    raise NotImplementedError()
+def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
+    """
+    Gets the public key from disk if possible otherwise request it from
+    PublicKeyStore
+    :param node_id: bytes for the node you want public key of
+    :return: PublicKey
+    """
+    init_directory = get_full_init_directory(None)
+    pub_key_directory = os.path.join(
+        init_directory,
+        DEFAULT_PUB_KEY_LOOKUP_LOCATION,
+    )
+
+    if not os.path.isdir(pub_key_directory):
+        os.makedirs(pub_key_directory)
+
+    key_file_name = "{}.pub".format(node_id)
+    key_path = os.path.join(pub_key_directory, key_file_name)
+
+    if os.path.isfile(key_path):
+        with open(key_path, 'rb') as pub_file:
+            pub_key = pub_file.read()
+            return load_public_key(pub_key)
+    else:
+        node_id = node_id_from_private_key(load_private_key_from_disk())
+        public_key_store = get_public_key_store(node_id)
+        key_request = public_key_store.request_key(bytes)
+        if key_request[0]:
+            pub_key = key_request[1]
+            _save_key_to_disk(key_path, pub_key)
+            return load_public_key(pub_key)
+        else:
+            raise VerificationException()
+
+
+def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:
+    """
+    Saves the public key to the specified location
+    :param key_path: absolute path to location of public key
+    :param pub_key: bytes to be saved
+    """
+    with open(key_path, 'wb') as pub_file:
+        pub_file.write(pub_key)
 
 
 def gen_drop_id(first_owner: bytes) -> bytes:
