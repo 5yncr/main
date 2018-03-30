@@ -4,7 +4,6 @@ import os
 from abc import ABC
 from abc import abstractmethod
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
@@ -59,11 +58,13 @@ class DropPeerStore(ABC):
     """Abstract base class for communication to send/get peer lists"""
 
     @abstractmethod
-    def add_drop_peer(self, drop_id, ip, port):
+    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         pass
 
     @abstractmethod
-    def request_peers(self, drop_id):
+    def request_peers(
+        self, drop_id: bytes,
+    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         pass
 
 
@@ -109,7 +110,7 @@ class TrackerPeerStore(DropPeerStore):
 
     def request_peers(
         self, drop_id: bytes,
-    ) -> Tuple[bool, Optional[List[Tuple[str, str, str]]]]:
+    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
@@ -127,6 +128,9 @@ class TrackerPeerStore(DropPeerStore):
         )
         logger.debug("tracker get peers response: %s", response)
         if response.get('result') == TRACKER_OK_RESULT:
-            return True, response.get('data')
+            data = response.get('data')
+            if data is None:
+                return False, []
+            return True, data
         else:
-            return False, list()
+            return False, []

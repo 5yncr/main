@@ -7,6 +7,7 @@ from typing import Tuple
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import DEFAULT_FILE_METADATA_LOCATION
+from syncr_backend.external_interface import drop_peer_store
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
@@ -30,9 +31,7 @@ def sync_drop(drop_id: bytes, save_dir: str):
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
     """
-    drop_peers = [("127.0.0.1", 1234)]
-    # TODO: get drop peers
-    raise Exception("Not Implemented")
+    drop_peers = get_drop_peers(drop_id)
 
     add_drop_from_id(drop_id, save_dir)
     drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
@@ -59,9 +58,7 @@ def update_drop(drop_id: bytes) -> None:
     :param peers: list of peers to get drop metadata from if missing
 
     """
-    peers = [("127.0.0.1", 1234)]
-    # TODO: get drop peers
-    raise Exception("Not Implemented")
+    peers = get_drop_peers(drop_id)
 
     old_drop_metadata = get_drop_metadata(drop_id, peers)
     priv_key = node_init.load_private_key_from_disk()
@@ -244,3 +241,22 @@ def sync_drop_contents(
                 break
 
     return needed_chunks
+
+
+class PeerStoreError(Exception):
+    pass
+
+
+def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
+    """
+    Gets the peers that have a drop
+    :param drop_id: id of drop
+    """
+    priv_key = node_init.load_private_key_from_disk()
+    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    drop_peer_store_instance = drop_peer_store.get_drop_peer_store(node_id)
+    success, drop_peers = drop_peer_store_instance.request_peers(drop_id)
+    if not success:
+        raise PeerStoreError("Could not connect to peers")
+
+    return [(ip, int(port)) for peer_name, ip, port in drop_peers]
