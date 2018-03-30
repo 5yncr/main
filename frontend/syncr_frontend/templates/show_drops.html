@@ -162,7 +162,7 @@
       <th class=file-actions>
         <div class=file-action-container>
           <div class=file-action-button-container>
-            <form method="GET" action="{{ url_for('input_name') }}">
+            <form method="POST" action="{{ url_for('input_name') }}">
               Drop Name: <input type='text' name='inputted_drop_name' />
               <input class=file-action-button type='submit' value='Create Drop'/>
             </form>
@@ -178,7 +178,7 @@
     <th class=file-actions>
       <div class=file-action-container>
         <div class=file-action-button-container>
-          <form method="GET" action="{{ url_for('input_drop_to_subscribe') }}">
+          <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
             Drop to Subscribe to: <input type='text' name='drop_to_subscribe_to' />
             <input class=file-action-button type='submit' value='Subscribe'/>
           </form>
