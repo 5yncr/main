@@ -56,9 +56,12 @@ def add_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     :save_dir: where to download the drop to
     """
 
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
-    os.mkdir(os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION))
+    os.makedirs(
+        os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION), exist_ok=True,
+    )
+    os.makedirs(
+        os.path.join(save_dir, DEFAULT_FILE_METADATA_LOCATION), exist_ok=True,
+    )
     save_drop_location(drop_id, save_dir)
 
 
@@ -143,7 +146,7 @@ def sync_drop_contents(
             file_id=file_id,
         )
         avail_set = set(avail_chunks)
-        can_get_from_peer = avail_set - needed_chunks
+        can_get_from_peer = avail_set & needed_chunks
         if not can_get_from_peer:
             continue
         for cid in can_get_from_peer:
@@ -164,6 +167,7 @@ def sync_drop_contents(
                 file_metadata.finish_chunk(cid)
                 needed_chunks -= {cid}
             except crypto_util.VerificationException:
+                print("verification exception")
                 break
 
     return needed_chunks

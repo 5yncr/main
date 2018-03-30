@@ -179,4 +179,4 @@ def send_chunk_request(
         ip,
         port,
     )
-    return chunk
+    return chunk.encode('utf-8')

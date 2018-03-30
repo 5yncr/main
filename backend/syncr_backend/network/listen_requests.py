@@ -60,6 +60,7 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     :return: None
     """
     file_location = get_drop_location(request['drop_id'])
+    file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
     if request.get('version') is not None and request.get('nonce') is not None:
         drop_version = DropVersion(
             int(request['version']), int(request['nonce']),
@@ -190,12 +191,13 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
             os.path.join(
                 drop_location, file_name,
             ), request['index'],
-        )
+        )[0]
         response = {
             'status': 'ok',
             'response': chunk,
         }
 
+    print(response)
     send_response(conn, response)
 
 
@@ -244,9 +246,9 @@ def listen_requests(
             else:
                 request += data
             print('Data received')
-        s.shutdown(SHUT_RD)
+        conn.shutdown(SHUT_RD)
         request_dispatcher(bencode.decode(request), conn)
-        s.close()
+        conn.close()
 
 
 if __name__ == '__main__':

@@ -88,11 +88,14 @@ def create_file(
     :return: None
     """
     new_path = filepath + DEFAULT_INCOMPLETE_EXT
-    if is_complete(filepath):
-        os.replace(filepath, new_path)
+    try:
+        if is_complete(filepath):
+            os.replace(filepath, new_path)
+    except FileNotFoundError:
+        pass
 
     filepath = new_path
-    with open(filepath, 'rb') as f:
+    with open(filepath, 'wb') as f:
         f.truncate(size_bytes)
 
 
@@ -119,9 +122,9 @@ def is_complete(filepath: str) -> bool:
     :return: Whether the file is downloaded, based on its extension
     """
     unfinished_path = filepath + DEFAULT_INCOMPLETE_EXT
-    if os.path.exists(unfinished_path):
+    if os.path.isfile(unfinished_path):
         return False
-    if os.path.exists(filepath):
+    if os.path.isfile(filepath):
         return True
     raise FileNotFoundError(filepath)
 

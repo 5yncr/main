@@ -62,7 +62,7 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     if os.path.exists(full_directory):
         raise FileExistsError
 
-    os.mkdir(full_directory)
+    os.makedirs(full_directory)
     private_key = crypto_util.generate_private_key()
     write_private_key_to_disk(private_key, full_directory)
 
