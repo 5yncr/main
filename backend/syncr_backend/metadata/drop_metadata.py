@@ -372,9 +372,9 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
             pub_key = pub_file.read()
             return load_public_key(pub_key)
     else:
-        node_id = node_id_from_private_key(load_private_key_from_disk())
-        public_key_store = get_public_key_store(node_id)
-        key_request = public_key_store.request_key(bytes)
+        this_node_id = node_id_from_private_key(load_private_key_from_disk())
+        public_key_store = get_public_key_store(this_node_id)
+        key_request = public_key_store.request_key(node_id)
         if key_request[0]:
             pub_key = key_request[1]
             _save_key_to_disk(key_path, pub_key)
