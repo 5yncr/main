@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import base64
 import datetime
 import os
@@ -327,8 +328,12 @@ def main():
             else:
                 request += data
         print('Data recieved')
-        request = bencode.decode(request)
-        handle_request(conn, request)
+        try:
+            request = bencode.decode(request)
+            handle_request(conn, request)
+        except Exception:
+            print("Bad request recieved; continuing")
+            pass
         conn.close()
 
 
