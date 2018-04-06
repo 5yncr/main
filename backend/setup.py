@@ -11,4 +11,7 @@ setup(
         'syncr_backend.external_interface',
     ],
     license='AGPLv3',
+    scripts=[
+        'bin/make_tracker_configs',
+    ],
 )
