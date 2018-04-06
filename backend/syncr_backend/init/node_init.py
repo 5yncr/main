@@ -36,8 +36,8 @@ def delete_node_directory(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    logger.info("deleting node directory %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
+    logger.info("deleting node directory %s", full_directory)
 
     if os.path.exists(full_directory):
         shutil.rmtree(full_directory)
@@ -63,14 +63,14 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     :param init_directory: directory where node files are stored,
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
-    logger.info("initializing node in %s", init_directory)
     full_directory = get_full_init_directory(init_directory)
+    logger.info("initializing node in %s", full_directory)
 
     if os.path.exists(full_directory):
         logger.error(
-            "tried to initialize over existing node dir %s", init_directory,
+            "tried to initialize over existing node dir %s", full_directory,
         )
-        raise FileExistsError
+        raise FileExistsError(full_directory)
 
     os.makedirs(full_directory)
     private_key = crypto_util.generate_private_key()

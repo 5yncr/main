@@ -225,9 +225,14 @@ class DropMetadata(object):
         :param metadata_location: where to find it
         """
         file_name = DropMetadata.make_filename(id, LATEST)
+        logger.debug(
+            "trying to read file %s from %s", file_name, metadata_location,
+        )
         if not os.path.isfile(os.path.join(metadata_location, file_name)):
+            logger.debug("File not found")
             return None
         with open(os.path.join(metadata_location, file_name), 'r') as f:
+            logger.debug("Reading file")
             return f.readline()
 
     @staticmethod
@@ -243,8 +248,12 @@ class DropMetadata(object):
         """
         logger.debug("reading from file")
         if version is None:
+            logger.debug(
+                "Version is None, looking it up in %s", metadata_location,
+            )
             file_name = DropMetadata.read_latest(id, metadata_location)
         else:
+            logger.debug("Getting version %s", version)
             file_name = DropMetadata.make_filename(id, version)
         if file_name is None:
             logger.warning(
@@ -342,9 +351,18 @@ def get_drop_location(drop_id: bytes) -> str:
         return f.read()
 
 
+def list_drops() -> List[bytes]:
+    save_path = _get_save_path()
+    names = os.listdir(save_path)
+
+    return [crypto_util.b64decode(os.fsencode(e)) for e in names]
+
+
 def _get_save_path() -> str:
     node_info_path = node_init.get_full_init_directory()
     save_path = os.path.join(node_info_path, DEFAULT_METADATA_LOOKUP_LOCATION)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
     return save_path
 
 
@@ -364,7 +382,7 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     if not os.path.isdir(pub_key_directory):
         os.makedirs(pub_key_directory)
 
-    key_file_name = "{}.pub".format(node_id)
+    key_file_name = "{}.pub".format(crypto_util.b64encode(node_id))
     key_path = os.path.join(pub_key_directory, key_file_name)
 
     if os.path.isfile(key_path):
@@ -376,11 +394,23 @@ def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
         public_key_store = get_public_key_store(this_node_id)
         key_request = public_key_store.request_key(node_id)
         if key_request[0]:
-            pub_key = key_request[1]
+            pub_key = key_request[1].encode('utf-8')
             _save_key_to_disk(key_path, pub_key)
             return load_public_key(pub_key)
         else:
             raise VerificationException()
+
+
+def send_my_pub_key() -> None:
+    this_node_id = node_id_from_private_key(load_private_key_from_disk())
+    logger.info(
+        "Sending pub key for %s to tracker",
+        crypto_util.b64encode(this_node_id),
+    )
+    public_key_store = get_public_key_store(this_node_id)
+    pub_key = load_private_key_from_disk().public_key()
+    pub_key_bytes = crypto_util.dump_public_key(pub_key)
+    public_key_store.set_key(pub_key_bytes)
 
 
 def _save_key_to_disk(key_path: str, pub_key: bytes) -> None:

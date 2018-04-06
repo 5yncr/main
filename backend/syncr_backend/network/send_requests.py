@@ -190,4 +190,7 @@ def send_chunk_request(
         port,
     )
     logger.debug("recieved chunk")
-    return chunk.encode('utf-8')
+    if type(chunk) == str:
+        return chunk.encode('utf-8')
+    else:
+        return chunk

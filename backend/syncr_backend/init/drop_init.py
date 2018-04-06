@@ -21,11 +21,12 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def initialize_drop(directory: str) -> None:
+def initialize_drop(directory: str) -> bytes:
     """Initialize a drop from a directory. Generates the necesssary drop and
     file metadata files and writes the drop location to the central config dif
 
     :param directory: The directory to initialize a drop from
+    :return: The b64 encoded id of the created drop
     """
     logger.info("initializing drop in dir %s", directory)
     priv_key = node_init.load_private_key_from_disk()
@@ -47,6 +48,8 @@ def initialize_drop(directory: str) -> None:
         )
     save_drop_location(drop_m.id, directory)
     logger.info("drop initialized with %s files", len(files_m))
+
+    return crypto_util.b64encode(drop_m.id)
 
 
 def make_drop_metadata(

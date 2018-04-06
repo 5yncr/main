@@ -1,0 +1,50 @@
+version: '2'
+
+services:
+    node1:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/basic_test.sh"
+        ports:
+            - 2345
+    node2:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
+        ports:
+            - 2345
+    node3:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
+        ports:
+            - 2345
+    hostnode:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/hostnode.sh"
+        ports:
+            - 2345
+        volumes:
+            - /share
+    syncnode:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "echo hi"
+        ports:
+            - 2345
+        volumes_from:
+            - hostnode:ro
+
+    tracker:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile.tracker
+        command: sh -c "tracker.py '0.0.0.0' 2346"
+        ports:
+            - 2346

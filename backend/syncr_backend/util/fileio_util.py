@@ -42,7 +42,10 @@ def write_chunk(
     filepath += DEFAULT_INCOMPLETE_EXT
     if crypto_util.hash(contents) != chunk_hash:
         raise crypto_util.VerificationException()
-    logger.debug("writing chunk with hash %s", chunk_hash)
+    logger.debug(
+        "writing chunk with filepath %s and hash %s", filepath,
+        crypto_util.b64encode(chunk_hash),
+    )
 
     with open(filepath, 'wb') as f:
         pos_bytes = position * chunk_size
@@ -104,6 +107,9 @@ def create_file(
         pass
 
     filepath = new_path
+    dirname = os.path.dirname(filepath)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname, exist_ok=True)
     with open(filepath, 'wb') as f:
         logger.debug("truncating %s ot %s bytes", filepath, size_bytes)
         f.truncate(size_bytes)

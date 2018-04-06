@@ -1,6 +1,5 @@
 """Helper functions for sending tracker requests"""
 import socket
-from socket import SHUT_RD
 from socket import SHUT_WR
 from typing import Any
 from typing import Dict
@@ -38,7 +37,6 @@ def send_request_to_tracker(
                 break
             else:
                 response += data
-        s.shutdown(SHUT_RD)
         s.close()
 
         return bencode.decode(response)

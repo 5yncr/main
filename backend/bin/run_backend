@@ -4,8 +4,10 @@ import threading
 from typing import Any
 from typing import List
 
+from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
+from syncr_backend.metadata.drop_metadata import send_my_pub_key
 from syncr_backend.network.listen_requests import listen_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
@@ -34,18 +36,44 @@ def run_backend() -> None:
         action="store_true",
         help='runs only the backend if added as an option',
     )
+    input_args_parser.add_argument(
+        "--external_address",
+        type=str,
+        help="Set this if the external address is different from the listen "
+        "address",
+    )
+    input_args_parser.add_argument(
+        "--external_port",
+        type=int,
+        help="Set this if the external port is different from the listen port",
+    )
     arguments = input_args_parser.parse_args()
+    if arguments.external_address is not None:
+        ext_addr = arguments.external_address
+    else:
+        ext_addr = arguments.ip[0]
+    if arguments.external_port is not None:
+        ext_port = arguments.ext_port
+    else:
+        ext_port = int(arguments.port[0])
 
+    send_my_pub_key()
     shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
         target=listen_requests,
         args=[arguments.ip[0], arguments.port[0], shutdown_flag],
     )
     request_listen_thread.start()
+    send_drops_thread = threading.Thread(
+        target=send_drops_to_dps,
+        args=[ext_addr, ext_port, shutdown_flag],
+    )
+    send_drops_thread.start()
 
     if not arguments.backendonly:
         read_cmds_from_cmdline()
         shutdown_flag.set()
+        send_drops_thread.join()
         request_listen_thread.join()
 
 

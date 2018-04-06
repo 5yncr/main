@@ -1,0 +1,8 @@
+FROM python:alpine
+
+RUN apk add --update build-base git openssl-dev libffi-dev linux-headers && \
+    rm -rf /var/cache/apk/*
+
+WORKDIR /work
+
+RUN pip install git+https://github.com/5yncr/tracker#egg=5yncr_Tracker --process-dependency-links

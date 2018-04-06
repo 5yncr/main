@@ -74,7 +74,7 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
         drop_version = None
     request_drop_metadata = DropMetadata.read_file(
         request['drop_id'],
-        os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION),
+        file_location,
         drop_version,
     )
 
@@ -250,7 +250,7 @@ def listen_requests(
 
     while not shutdown_flag.is_set():
         conn, addr = s.accept()
-        logger.info('Connection address:', addr)
+        logger.info('Connection address: %s', addr)
         request = b''
         while 1:
             data = conn.recv(DEFAULT_BUFFER_SIZE)

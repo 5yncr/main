@@ -181,7 +181,7 @@ class FileMetadata(object):
         return all_chunks - self.downloaded_chunks
 
     def finish_chunk(self, chunk_id: int) -> None:
-        self.log.debug("finishing chunks %s", chunk_id)
+        self.log.debug("finishing chunk %s", chunk_id)
         self.downloaded_chunks.add(chunk_id)
 
 

@@ -1,10 +1,12 @@
 language: python
+services:
+    - docker
 python:
     - "3.6"
-    - "3.5"
-    - "3.4"
 env:
     - TOXENV=py3,coverage,mypy
+    - TOXENV=itests_simple
+    - TOXENV=itests_complex
 script:
     - flake8 syncr_backend tests
     - pycodestyle syncr_backend tests
