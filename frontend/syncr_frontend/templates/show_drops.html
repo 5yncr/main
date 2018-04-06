@@ -85,6 +85,15 @@
         Owner ID: <input type='text' name='owner_id' />
         <input class=file-action-button type='submit' value='Add Owner' />
     </form>
+    <form method="POST" action="{{ url_for('transfer_ownership') }}">
+      Transfer Ownership to:
+      <select>
+        {% for owner in selected.other_owners %}
+          <option value={{owner}}>{{owner}}</option>
+        {% endfor %}
+      </select>
+      <input class=file-action-button type='submit' value='Transfer' />
+    </form>
 {% elif selected and selec_act == "current conflicts" %}
     Current conflicts of drop {{ selected.name|safe }}:
     <table class=file-table>
@@ -93,13 +102,20 @@
         <th class=file-name>{{ file.name|safe }}</th>
         <th class=file-actions>
           <div class=file-action-container>
+            {% if file.occr == "many" %}
+              <select>
+                {% for version in versions %}
+                  <option value={{version.name}}>{{version.name}}</option>
+                {% endfor %}
+              </select>
+            {% endif %}
             <div class=file-action-button-container>
-              <form method="GET" action="{{ url_for('accept_conflict_file', file_path=selected.name) }}">
+              <form method="POST" action="{{ url_for('accept_conflict_file', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='accept'/>
               </form>
             </div>
             <div class=file-action-button-container>
-              <form method="GET" action="{{ url_for('decline_conflict_file', file_path=selected.name) }}">
+              <form method="POST" action="{{ url_for('decline_conflict_file', file_path=selected.name) }}">
                 <input class=file-action-button type='submit' value='decline'/>
               </form>
             </div>
@@ -131,6 +147,36 @@
       </tr>
     {% endfor %}
     </table>
+{% elif selected and selec_act == "request_change" %}
+  Current changes requested for drop {{ selected.name | safe }}:
+  <table class=file-table>
+  {% for file in selected.files %}
+      <tr class=file-info-row>
+          <th class=file-name>{{ file.name|safe }}</th>
+          <th class=file-actions>
+            <div class=file-action-container>
+              <div class=file-action-button-container>
+                  <form method="GET" action="{{ url_for('remove_change', file_path=selected.name) }}">
+                      <input class=file-action-button type='submit' value='remove' />
+                  </form>
+              </div>
+            </div>
+          </th>
+      </tr>
+  {% endfor %}
+  </table>
+  <div class=file-action-container>
+    <div class=file-action-button-container>
+      <form method="GET" action="{{ url_for('upload_file') }}">
+        <input class=file-action-button type='submit' value='upload file' />
+      </form>
+    </div>
+    <div class=file-action-button-container>
+      <form method="GET" action="{{ url_for('submit_changes', drop_id=selected.name) }}">
+        <input class=file-action-button type='submit' value='submit changes' />
+      </form>
+    </div>
+  </div>
 {% elif selected %}
     Name is {{ selected.name|safe }}. {{ action.description|safe }}
     <table class=file-table>

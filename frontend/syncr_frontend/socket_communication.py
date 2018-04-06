@@ -72,6 +72,7 @@ class Socket:
 
         # Example response for initial UI setup
         # response = {
+        #     'change_list': message.get('change_list'),
         #     'drop_id': message.get('drop_id'),
         #     'drop_name': message.get('drop_name'),
         #     'file_name': message.get('file_name'),
