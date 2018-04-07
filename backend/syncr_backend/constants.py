@@ -79,3 +79,7 @@ ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
 ACTION_REQUEST_CHANGE = 'request_change'
 ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
+
+# Frontend connection settings
+FRONTEND_TCP_ADDRESS = ('localhost', 12345)
+FRONTEND_UNIX_ADDRESS = './unix_socket'
