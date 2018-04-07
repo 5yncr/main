@@ -1,4 +1,6 @@
 """The send side of network communications"""
+import socket
+from socket import SHUT_WR
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -7,6 +9,9 @@ from typing import Optional
 from typing import Tuple
 from typing import TypeVar
 
+import bencode  # type: ignore
+
+from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import PROTOCOL_VERSION
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
@@ -17,6 +22,7 @@ from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.util import network_util
 from syncr_backend.util.log_util import get_logger
+from syncr_backend.util.network_util import raise_network_error
 
 
 R = TypeVar('R')
@@ -85,7 +91,7 @@ def send_drop_metadata_request(
         request_dict['version'] = drop_version.version
         request_dict['nonce'] = drop_version.nonce
 
-    drop_metadata_bytes = network_util.send_request_to_node(
+    drop_metadata_bytes = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -117,7 +123,7 @@ def send_file_metadata_request(
         'drop_id': drop_id,
     }
 
-    file_metadata_bytes = network_util.send_request_to_node(
+    file_metadata_bytes = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -149,7 +155,7 @@ def send_chunk_list_request(
         'drop_id': drop_id,
     }
 
-    chunk_index_list = network_util.send_request_to_node(
+    chunk_index_list = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -184,7 +190,7 @@ def send_chunk_request(
         'index': file_index,
     }
 
-    chunk = network_util.send_request_to_node(
+    chunk = send_request_to_node(
         request_dict,
         ip,
         port,
@@ -194,3 +200,40 @@ def send_chunk_request(
         return chunk.encode('utf-8')
     else:
         return chunk
+
+
+def send_request_to_node(
+    request: Dict[str, Any], ip: str, port: int,
+) -> Any:
+    """
+    Creates a connection a node and sends a given request to the
+    node and returns the response
+    :param port: port where node is serving
+    :param ip: ip of node
+    :param request: Dictionary of a request as specified in the Spec Document
+    :return: node response
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((ip, port))
+        s.send(bencode.encode(request))
+        s.shutdown(SHUT_WR)
+        data = b''
+        while 1:
+            sockdata = s.recv(DEFAULT_BUFFER_SIZE)
+            if not sockdata:
+                break
+            data += sockdata
+        s.close()
+
+        response = bencode.decode(data)
+        if (response['status'] == 'ok'):
+            logger.debug("sending OK")
+            return response['response']
+        else:
+            logger.debug("sending error")
+            raise_network_error(response['error'])
+
+    except socket.timeout:
+        s.close()
+        raise TimeoutError('ERROR: backend connection socket timed out')

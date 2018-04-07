@@ -11,6 +11,7 @@ from syncr_backend.metadata.drop_metadata import send_my_pub_key
 from syncr_backend.network.listen_requests import listen_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
+from syncr_backend.util import network_util
 # from syncr_backend.network import send_requests
 
 
@@ -73,6 +74,7 @@ def run_backend() -> None:
     if not arguments.backendonly:
         read_cmds_from_cmdline()
         shutdown_flag.set()
+        network_util.close_socket_thread(arguments.ip[0], arguments.port[0])
         send_drops_thread.join()
         request_listen_thread.join()
 

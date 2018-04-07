@@ -6,7 +6,6 @@ from typing import Dict
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import ERR_INCOMPAT
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.util.log_util import get_logger
@@ -58,38 +57,11 @@ def raise_network_error(
     raise exceptionmap[errno]
 
 
-def send_request_to_node(
-    request: Dict[str, Any], ip: str, port: int,
-) -> Any:
-    """
-    Creates a connection a node and sends a given request to the
-    node and returns the response
-    :param port: port where node is serving
-    :param ip: ip of node
-    :param request: Dictionary of a request as specified in the Spec Document
-    :return: node response
-    """
+def close_socket_thread(ip: str, port: int):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((ip, port))
-        s.send(bencode.encode(request))
         s.shutdown(SHUT_WR)
-        data = b''
-        while 1:
-            sockdata = s.recv(DEFAULT_BUFFER_SIZE)
-            if not sockdata:
-                break
-            data += sockdata
-        s.close()
-
-        response = bencode.decode(data)
-        if (response['status'] == 'ok'):
-            logger.debug("sending OK")
-            return response['response']
-        else:
-            logger.debug("sending error")
-            raise_network_error(response['error'])
-
     except socket.timeout:
         s.close()
-        raise TimeoutError('ERROR: backend connection socket timed out')
+        raise TimeoutError('ERROR: could not close socket due to timeout')

@@ -260,7 +260,8 @@ def listen_requests(
                 request += data
             logger.info('Data received')
         conn.shutdown(SHUT_RD)
-        request_dispatcher(bencode.decode(request), conn)
+        if len(request) > 0:
+            request_dispatcher(bencode.decode(request), conn)
         conn.close()
 
 

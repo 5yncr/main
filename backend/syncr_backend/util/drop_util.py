@@ -32,7 +32,6 @@ def sync_drop(drop_id: bytes, save_dir: str) -> bool:
     :param save_dir: directory to save drop
     """
     drop_peers = get_drop_peers(drop_id)
-
     add_drop_from_id(drop_id, save_dir)
     drop_metadata = get_drop_metadata(drop_id, drop_peers, save_dir)
     all_done = True
@@ -57,7 +56,7 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(drop_id: bytes) -> None:
+def update_drop(drop_id: bytes, peers: List[Tuple[str, int]]) -> None:
     """
     Update a drop from a directory.
 
@@ -66,7 +65,6 @@ def update_drop(drop_id: bytes) -> None:
 
     """
     peers = get_drop_peers(drop_id)
-
     old_drop_metadata = get_drop_metadata(drop_id, peers)
     priv_key = node_init.load_private_key_from_disk()
     node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
