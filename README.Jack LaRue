@@ -1,3 +1,7 @@
+# 06/04/2018
+      backend: Setup frontend to backend skeleton for primary ownership transfer (#41)
+      frontend: Setup frontend logic to transfer ownership. Add dropdown selection buttons. Reformat 'Request Change' page. (#13)
+
 # 30/03/2018
       backend: Implement skeleton for frontend action handling (#33)
       frontend: Fix text input for creating / subscribing to drops. Reformatted action types for consistency. (#12)

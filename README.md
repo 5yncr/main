@@ -1,3 +1,7 @@
+# 06/04/2018
+      The app works! The itests now run a full end to end test, which works
+
+
 # 30/03/2018
       This week we got file transfer actually working (in a non-real-world
       setting), continued integration between frontend and backend, added

@@ -1,3 +1,8 @@
+# 06/04/2018
+      backend: Add basic itests and make a controlled sync work
+      tracker: Setup tracker to be a script and pass on bad input
+      tracker: fix build
+
 # 30/03/2018
       backend: Initial code to actually download a drop from a peer
       backend: Add logging functions and use them throughout the code

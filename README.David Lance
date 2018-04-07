@@ -1,3 +1,9 @@
+# 06/04/2018
+      backend: Fix get_pub_key (#39)
+      backend: Add config creating script (#40)
+      notes: Also spent time working on version verification, but it needed
+      more review than expected and will be ready for next week
+
 # 30/03/2018
       backend: Add request listening (#29)
       backend: Fix bugs to allow for initial setup (#31)
