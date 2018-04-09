@@ -8,7 +8,6 @@ from collections import defaultdict
 from socket import SHUT_RDWR
 
 import bencode
-from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import DROP_ID_BYTE_SIZE
 from syncr_backend.constants import NODE_ID_BYTE_SIZE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
@@ -311,7 +310,6 @@ def main():
     """
     tcp_ip = sys.argv[1]
     tcp_port = sys.argv[2]
-    buffer_size = DEFAULT_BUFFER_SIZE
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((tcp_ip, int(tcp_port)))
@@ -322,7 +320,7 @@ def main():
         print('Connection address:', addr)
         request = b''
         while 1:
-            data = conn.recv(buffer_size)
+            data = conn.recv(2**20)
             if not data:
                 break
             else:
