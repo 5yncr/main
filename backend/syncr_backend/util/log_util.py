@@ -1,6 +1,10 @@
 """Log util functions"""
 import logging
 import os
+from typing import Dict  # noqa
+
+
+loggers = {}  # type: Dict[str, logging.Logger]
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -14,6 +18,8 @@ def get_logger(name: str) -> logging.Logger:
     :param name: The name of the logger. Normally this will be __name__
     :return: A logger that logs to the console
     """
+    if name in loggers:
+        return loggers[name]
     logger = logging.getLogger(name)
     log_level = getattr(
         logging, os.environ.get('LOG_LEVEL', 'INFO').upper(), None,
@@ -27,4 +33,5 @@ def get_logger(name: str) -> logging.Logger:
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+    loggers[name] = logger
     return logger
