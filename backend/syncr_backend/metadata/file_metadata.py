@@ -29,7 +29,7 @@ class FileMetadata(object):
     # TODO: define PROTOCOL_VERSION somewhere
     def __init__(
         self, hashes: List[bytes], file_id: bytes, file_length: int,
-        drop_id: bytes,
+        drop_id: bytes, file_name: Optional[str]=None,
         chunk_size: int=DEFAULT_CHUNK_SIZE, protocol_version: int=1,
     ) -> None:
         self.hashes = hashes
@@ -41,6 +41,7 @@ class FileMetadata(object):
         self.num_chunks = ceil(file_length / chunk_size)
         self.drop_id = drop_id
         self._save_dir = None  # type: Optional[str]
+        self.file_name = file_name
 
     @property
     def log(self) -> logging.Logger:
@@ -146,7 +147,10 @@ class FileMetadata(object):
         )
         if dm is None:
             return set()
-        file_name = dm.get_file_name_from_id(self.file_id)
+        if self.file_name is None:
+            file_name = dm.get_file_name_from_id(self.file_id)
+        else:
+            file_name = self.file_name
         full_name = os.path.join(self.save_dir, file_name)
         downloaded_chunks = set()  # type: Set[int]
         for chunk_idx in range(self.num_chunks):

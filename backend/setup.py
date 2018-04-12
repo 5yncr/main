@@ -5,19 +5,24 @@ setup(
     version='0.0.1',
     packages=[
         'syncr_backend',
+        'syncr_backend.bin',
         'syncr_backend.util',
         'syncr_backend.metadata',
         'syncr_backend.init',
         'syncr_backend.external_interface',
     ],
     license='AGPLv3',
+    entry_points={
+        'console_scripts': [
+            'check_drop = syncr_backend.bin.check_drop:main',
+            'drop_init = syncr_backend.bin.drop_init:main',
+            'sync_drop = syncr_backend.bin.sync_drop:main',
+            'make_tracker_configs = syncr_backend.bin.make_tracker_configs:main',  # noqa
+            'node_init = syncr_backend.bin.node_init:main',
+            'run_backend = syncr_backend.bin.run_backend:run_backend',
+        ],
+    },
     scripts=[
-        'bin/make_tracker_configs',
-        'bin/run_backend',
-        'bin/node_init',
-        'bin/drop_init',
-        'bin/make_tracker_configs',
-        'bin/sync_drop',
         'syncr_backend/contrib/bq',
     ],
     install_requires=[
