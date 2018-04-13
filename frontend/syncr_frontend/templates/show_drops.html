@@ -208,8 +208,12 @@
       <th class=file-actions>
         <div class=file-action-container>
           <div class=file-action-button-container>
-            <form method="POST" action="{{ url_for('input_name') }}">
-              Drop Name: <input type='text' name='inputted_drop_name' />
+            <form method="GET" action="{{ url_for('select_directory') }}">
+              <input class=file-action-button type='submit' value='Select Directory' />
+            </form>
+          </div>
+          <div class=file-action-button-container>
+            <form method="GET" action="{{ url_for('initialize_drop') }}">
               <input class=file-action-button type='submit' value='Create Drop'/>
             </form>
           </div>
@@ -217,6 +221,21 @@
       </th>
     </tr>
   </table>
+  <br><b>How to Create a Drop:</b><br><br>
+    1) First, create and name the folder that you wish to turn into a drop
+  <small>
+    <div class=text-indent>
+      -To do this in either Windows or iOS, navigate to where you would like to
+      create the folder, right-click on open space, and click "New Folder".
+    </div>
+  </small>
+    2) Next, click the "Select Directory" button above. Select this newly-created
+    folder, and hit "Accept" / "OK". <br>
+    3) After, a message will pop up showing which directory was selected.
+    Click on "Create Drop" button, and the drop will be initialized in that folder. <br>
+    4) If the folder has already been initialized, then step 3 will fail. To fix this,
+    create a new folder, give it a unique name, and repeat the steps above.<br>
+    5) All done!
 {% elif selec_act == "subscribe_to_drop" %}
 <table class=file-table>
   <tr class=file-info-row>

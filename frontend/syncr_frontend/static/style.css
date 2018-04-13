@@ -80,6 +80,9 @@ h2 {
     overflow-x: hidden;
     padding: 8px 0;
 }
+div.text-indent {
+    text-indent: 50px;
+}
 .drop-list {
     vertical-align:top;
     display:inline-block;

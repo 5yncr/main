@@ -1,13 +1,13 @@
 import platform
 import subprocess
 from os import path
-from tkinter import filedialog
-from tkinter import Tk
 
 from flask import flash
 from flask import Flask
 from flask import render_template
 from flask import request
+from tkinter import filedialog
+from tkinter import Tk
 
 from . import communication
 
@@ -23,6 +23,7 @@ app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 
 # Global Variables
 curr_action = ''
+current_drop_path = ''
 change_list = []
 
 # Backend Access Functions
@@ -290,24 +291,60 @@ def transfer_ownership():
     )
 
 
-@app.route('/input_name', methods=['POST'])
-def input_name():
+@app.route('/select_directory')
+def select_directory():
+    """
+    Allows user to select directory to turn into drop.
+    :return: directory path is stored.
+    """
+    global current_drop_path
+
+    root = Tk()
+    root.filename = filedialog.askopenfilename(
+        initialdir="/", title="Select file",
+        filetypes=[("all files", "*.*")],
+    )
+
+    directory_path = root.filename
+    root.destroy()
+
+    if directory_path is None:
+        flash("No directory selected")
+    else:
+        current_drop_path = directory_path
+
+    return show_drops(None, None)
+
+
+@app.route('/initialize_drop')
+def initialize_drop():
     """
     After inputting a name, a drop is created with said name.
     :return: Message sent back to frontend.
     """
-    result = request.form.get('inputted_drop_name')
+    global current_drop_path
+    response = ''
 
-    message = {
-        'action': 'input_name',
-        'drop_name': result,
-    }
+    if current_drop_path == '':
+        flash('Cannot create drop. No directory was selected.')
+        has_response = False
+    else:
+        message = {
+            'action': 'initialize_drop',
+            'directory': current_drop_path,
+        }
+        has_response = True
+        response = send_message(message)
+        current_drop_path = ''
 
-    response = send_message(message)
+    if has_response:
+        message = response.get('message')
+    else:
+        message = None
 
     return show_drops(
         None,
-        response.get('message'),
+        message,
     )
 
 
