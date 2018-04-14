@@ -1,3 +1,8 @@
+# 13/04/2018
+      notes: This week researched and worked on the DHT.  It ran into some
+      unexpected issues, and is currently not ready for merging, but is
+      currently several hours (5+) of work
+
 # 06/04/2018
       backend: Fix threads (#42)
       notes: Also spent significant time researching DHTs, and then writing an

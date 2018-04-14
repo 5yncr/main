@@ -1,3 +1,8 @@
+# 13/04/2018
+      backend: Cache loggers to make log output more readable
+      backend: Fix file writing and enable download resuming
+      tracker: Remove buffer size dependency
+
 # 06/04/2018
       backend: Add basic itests and make a controlled sync work
       tracker: Setup tracker to be a script and pass on bad input

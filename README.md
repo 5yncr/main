@@ -1,3 +1,9 @@
+# 13/04/2018
+      This week was a bit chaotic, and we have a lot of unmerged chnages that
+      should go out next week.  A lot of work that was done isn't seen in these
+      commits
+
+
 # 06/04/2018
       The app works! The itests now run a full end to end test, which works
 

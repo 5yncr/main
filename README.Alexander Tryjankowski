@@ -1,3 +1,6 @@
+# 13/04/2018
+      backend: Implement functionality for add/remove owners and get owned/subscribed/selected drops in backend & Convert drop_metadata objects to frontend dictionaries (#57)
+
 # 06/04/2018
       backend: Create listener for frontend communications, Ensure connections between both ends are working (#43)
       frontend: Implement sockets for various op sys, create constants file, prepare frontend functions for legitimate backend responses (#14)
