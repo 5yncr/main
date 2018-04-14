@@ -17,8 +17,8 @@ from syncr_backend.constants import ACTION_GET_CONFLICTING_FILES
 from syncr_backend.constants import ACTION_GET_OWNED_DROPS
 from syncr_backend.constants import ACTION_GET_SELECT_DROPS
 from syncr_backend.constants import ACTION_GET_SUB_DROPS
+from syncr_backend.constants import ACTION_INITIALIZE_DROP
 from syncr_backend.constants import ACTION_INPUT_DROP_TO_SUBSCRIBE_TO
-from syncr_backend.constants import ACTION_INPUT_NAME
 from syncr_backend.constants import ACTION_REMOVE_FILE
 from syncr_backend.constants import ACTION_REMOVE_OWNER
 from syncr_backend.constants import ACTION_REQUEST_CHANGE
@@ -30,6 +30,10 @@ from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
+from syncr_backend.init.drop_init import initialize_drop
+from syncr_backend.util.drop_util import get_drop_metadata
+from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.network_util import send_response
 
 
@@ -50,7 +54,7 @@ def handle_frontend_request(
         ACTION_GET_SELECT_DROPS: handle_get_selected_drops,
         ACTION_GET_SUB_DROPS: handle_get_subscribed_drops,
         ACTION_INPUT_DROP_TO_SUBSCRIBE_TO: handle_input_subscribe_drop,
-        ACTION_INPUT_NAME: handle_input_name,
+        ACTION_INITIALIZE_DROP: handle_initialize_drop,
         ACTION_REMOVE_FILE: handle_remove_file,
         ACTION_REMOVE_OWNER: handle_remove_owner,
         ACTION_REQUEST_CHANGE: handle_request_change,
@@ -189,13 +193,27 @@ def handle_add_file(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to add file to drop.
-        # TODO: Test if given drop_id and file_path are valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'file added to drop',
         }
+
+        update_drop(
+            request['drop_id'],
+            add_file=request['file_path'],
+        )
+
+        peers = get_drop_peers(request['drop_id'])
+        meta = get_drop_metadata(request['drop_id'], peers)
+
+        if os.path.basename(request['file_path']) not in meta.files:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'message': 'file was not added to the drop',
+
+            }
 
     send_response(conn, response)
 
@@ -461,7 +479,7 @@ def handle_input_subscribe_drop(
     send_response(conn, response)
 
 
-def handle_input_name(
+def handle_initialize_drop(
         request: Dict[str, Any], conn: socket.socket,
 ) -> None:
     """
@@ -474,19 +492,41 @@ def handle_input_name(
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_name'] is None:
-        response = {
-            'status': 'error',
-            'error': ERR_INVINPUT,
-        }
+    # This code assumes that the user has already
+    # created a folder to initialize as a drop.
+    #
+    # First, we check to see if tracker already contains drop id
+    # If so, do nothing, send message failure back
+    #
+    # Else, initialize directory with 'drop_name' as the name of the drop
+
+    # TODO: Allow user to select directory location from UI (on frontend).
+
+    directory = request['directory']
+    drop_name = os.path.basename(directory)
+
+    status = 'error'
+    result = 'failure'
+
+    # TODO: Change 'False' to check if drop id already exists in tracker
+    if False:
+        message = 'A drop already exists with the given drop name'
     else:
-        # TODO: backend logic to create a drop.
-        # TODO: Test if given drop_name is valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'Drop ' + request['drop_name'] + ' created',
-        }
+
+        try:
+            initialize_drop(directory)
+        except RuntimeError:
+            message = 'Error in initializing drop.'
+        else:
+            status = 'ok'
+            result = 'success'
+            message = 'Drop ' + drop_name + 'created'
+
+    response = {
+        'status': status,
+        'result': result,
+        'message': message,
+    }
 
     send_response(conn, response)
 
@@ -511,13 +551,27 @@ def handle_remove_file(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to remove file from drop.
-        # TODO: Test if given drop_id and file_name are valid.
         response = {
             'status': 'ok',
             'result': 'success',
-            'message': 'file successfully removed',
+            'message': 'file removed from drop',
         }
+
+        update_drop(
+            request['drop_id'],
+            remove_file=os.path.basename(request['file_path']),
+        )
+
+        peers = get_drop_peers(request['drop_id'])
+        meta = get_drop_metadata(request['drop_id'], peers)
+
+        if os.path.basename(request['file_path']) in meta.files:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'message': 'file was not removed from the drop',
+
+            }
 
     send_response(conn, response)
 

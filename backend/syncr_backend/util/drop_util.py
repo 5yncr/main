@@ -60,12 +60,19 @@ class PermissionError(Exception):
     pass
 
 
-def update_drop(drop_id: bytes) -> None:
+def update_drop(
+        drop_id: bytes,
+        add_file: bytes=None,
+        remove_file: bytes=None,
+        file_name: str=None,
+) -> None:
     """
     Update a drop from a directory.
 
     :param drop_id: The drop_id to update
-    :param peers: list of peers to get drop metadata from if missing
+    :param add_file: new file to be added to a drop
+    :param remove_file: file to be removed from a drop
+    :param file_name: name of file to be added/removed.
 
     """
     peers = get_drop_peers(drop_id)
@@ -82,6 +89,18 @@ def update_drop(drop_id: bytes) -> None:
         drop_name=old_drop_metadata.name,
         owner=old_drop_metadata.owner,
     )
+
+    # Updating current files.
+    if add_file is not None \
+            and add_file not in old_drop_metadata.files \
+            and file_name is not None:
+        old_drop_metadata.files.update({file_name: add_file})
+    if remove_file is not None \
+            and remove_file in old_drop_metadata.files \
+            and file_name is not None:
+        old_drop_metadata.files.pop(file_name)
+    new_drop_m.files = old_drop_metadata.files
+
     new_drop_m.other_owners = old_drop_metadata.other_owners
     new_drop_m.version = drop_metadata.DropVersion(
         old_drop_metadata.version.version + 1,
