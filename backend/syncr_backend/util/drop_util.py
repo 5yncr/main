@@ -12,6 +12,7 @@ from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
@@ -19,6 +20,7 @@ from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import crypto_util
 from syncr_backend.util import fileio_util
+from syncr_backend.util.crypto_util import VerificationException
 from syncr_backend.util.log_util import get_logger
 
 
@@ -164,14 +166,15 @@ def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
 
 
 def get_drop_metadata(
-    drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
+    drop_id: bytes, peers: List[Tuple[str, int]], save_dir:
+    Optional[str]=None, version: Optional[DropVersion]=None,
 ) -> DropMetadata:
     """Get drop metadata, given a drop id and save dir.  If the drop metadata
     is not on disk already, attempt to download from peers.
 
     :param drop_id: the drop id
-    :param save_dir: where the drop is saved
     :param peers: where to look on the network for data
+    :param save_dir: where the drop is saved
     :return: A drop metadata object
     """
     logger.info("getting drop metadata for %s", crypto_util.b64encode(drop_id))
@@ -184,15 +187,74 @@ def get_drop_metadata(
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
+        args = {
+            'drop_id': drop_id,
+            'drop_version': version,
+        }
         metadata = send_requests.do_request(
             request_fun=send_requests.send_drop_metadata_request,
             peers=peers,
-            fun_args={'drop_id': drop_id},
+            fun_args=args,
         )
 
         metadata.write_file(is_latest=True, metadata_location=metadata_dir)
 
     return metadata
+
+
+def verify_version(
+    drop_metadata: DropMetadata,
+    peers: Optional[List[Tuple[str, int]]]=None,
+) -> None:
+    """Verify the DropMetadata version recursively
+
+    If this version and all prior versions leading up to it are legitimate
+    returns none, otherwise throws an exception
+    """
+    if len(drop_metadata.previous_versions) == 0:
+        drop_metadata.verify_header()
+        return
+    elif len(drop_metadata.previous_versions) == 1:
+        version = drop_metadata.previous_versions[0]
+        if peers is None:
+            peers = get_drop_peers(drop_metadata.id)
+        dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
+        verify_version(dmd, peers)
+
+        if drop_metadata.signed_by == dmd.owner:
+            logger.debug(
+                "Beginning ownership change verification for drop: %s",
+                drop_metadata.id,
+            )
+            drop_metadata.verify_header()
+            logger.debug(
+                "Ownership change verified for drop: %s",
+                drop_metadata.id,
+            )
+        # TODO change in case of other owners becoming a list
+        elif drop_metadata.signed_by not in drop_metadata.other_owners.keys() \
+                or drop_metadata.signed_by != drop_metadata.owner:
+            logger.debug(
+                "%s signed as not owner on drop %s",
+                drop_metadata.signed_by,
+                drop_metadata.id,
+            )
+            raise VerificationException()
+        else:
+            drop_metadata.verify_header()
+    else:
+        #  Ownership changes are not allowed in merges and must be signed by
+        #  primary owner
+        primary_owner = drop_metadata.owner
+        if primary_owner != drop_metadata.signed_by:
+            raise VerificationException()
+        for version in drop_metadata.previous_versions:
+            if peers is None:
+                peers = get_drop_peers(drop_metadata.id)
+            dmd = get_drop_metadata(drop_metadata.id, peers, version=version)
+            verify_version(dmd, peers)
+            if primary_owner != dmd.owner:
+                raise VerificationException()
 
 
 def simple_get_drop_metadata(drop_id: bytes) -> DropMetadata:

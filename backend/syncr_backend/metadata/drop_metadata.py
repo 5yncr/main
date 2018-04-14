@@ -242,8 +242,8 @@ class DropMetadata(object):
         """Read a drop metadata file from disk
 
         :param id: the drop id
-        :param version: the drop version
         :param metadata_location: where to look for the file
+        :param version: the drop version
         :return: A DropMetadata object, or maybe None
         """
         logger.debug("reading from file")
