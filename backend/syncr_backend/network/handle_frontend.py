@@ -31,8 +31,12 @@ from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
+from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import get_owned_drops_metadata
+from syncr_backend.util.drop_util import get_subscribed_drops_metadata
+from syncr_backend.util.drop_util import simple_get_drop_metadata
 from syncr_backend.util.drop_util import update_drop
 from syncr_backend.util.network_util import send_response
 
@@ -238,13 +242,22 @@ def handle_add_owner(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to add owner to owner list.
-        # TODO: Test if given drop_id and owner_id are valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'owner successfully added',
         }
+
+        update_drop(
+            request['drop_id'],
+            add_secondary_owner=request['owner_id'],
+        )
+
+        md = simple_get_drop_metadata(request['drop_id'])
+
+        if request['owner_id'] not in md.other_owners:
+            response['result'] = 'failure'
+            response['message'] = 'unable to add owner to drop'
 
     send_response(conn, response)
 
@@ -385,10 +398,15 @@ def handle_get_owned_drops(
     :return: None
     """
 
-    # TODO: backend logic to retrieve owned drops.
+    owned_drops = get_owned_drops_metadata()
+    drop_dictionaries = []
+    for drop in owned_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
+
     response = {
         'status': 'ok',
         'result': 'success',
+        'requested_drops': drop_dictionaries,
         'message': 'owned drops retrieved',
     }
 
@@ -415,13 +433,23 @@ def handle_get_selected_drops(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to retrieve info on selected drop.
-        # TODO: Test if given drop_id is valid.
+        md = simple_get_drop_metadata(request['drop_id'])
+        drop = drop_metadata_to_response(md)
+
         response = {
             'status': 'ok',
             'result': 'success',
+            'requested_drops': drop,
             'message': 'selected files retrieved',
         }
+
+        if drop is None:
+            response = {
+                'status': 'error',
+                'result': 'failure',
+                'requested_drops': {},
+                'message': 'drop retrieval failed',
+            }
 
     send_response(conn, response)
 
@@ -439,10 +467,15 @@ def handle_get_subscribed_drops(
     :return: None
     """
 
-    # TODO: backend logic to retrieve subscribed drops.
+    subscribed_drops = get_subscribed_drops_metadata()
+    drop_dictionaries = []
+    for drop in subscribed_drops:
+        drop_dictionaries.append(drop_metadata_to_response(drop))
+
     response = {
         'status': 'ok',
         'result': 'success',
+        'requested_drops': drop_dictionaries,
         'message': 'subscribed drops retrieved',
     }
 
@@ -597,13 +630,22 @@ def handle_remove_owner(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: Backend logic to remove owner.
-        # TODO: Handle if drop_id or owner_id is not valid.
         response = {
             'status': 'ok',
             'result': 'success',
             'message': 'owner successfully removed',
         }
+
+        update_drop(
+            request['drop_id'],
+            remove_secondary_owner=request['owner_id'],
+        )
+
+        md = simple_get_drop_metadata(request['drop_id'])
+
+        if request['owner_id'] in md.other_owners:
+            response['result'] = 'failure'
+            response['message'] = 'unable to remove owner from drop'
 
     send_response(conn, response)
 
@@ -759,9 +801,29 @@ def handle_view_pending_changes(
     send_response(conn, response)
 
 
+# Helper functions for structure of responses
+def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
+    """
+    Converts dropMetadata object into frontend readable dictionary.
+    :param md: DropMetadata object
+    :return: Dictionary for frontend
+    """
+    response = {
+        'drop_id': md.id,
+        'name': md.name,
+        'version': md.version,
+        'previous_versions': md.previous_versions,
+        'primary_owner': md.owner,
+        'other_owners': md.other_owners,
+        'signed_by': md.signed_by,
+        'files': md.files,
+        'sig': md.sig,
+    }
+
+    return response
+
+
 # Functions for handling incoming frontend requests
-
-
 def handle_request():
     """
     Listens for request from frontend and then sends response

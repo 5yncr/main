@@ -13,6 +13,7 @@ from syncr_backend.init import node_init
 from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
 from syncr_backend.network import send_requests
@@ -62,6 +63,8 @@ class PermissionError(Exception):
 
 def update_drop(
         drop_id: bytes,
+        add_secondary_owner: bytes=None,
+        remove_secondary_owner: bytes=None,
         add_file: bytes=None,
         remove_file: bytes=None,
         file_name: str=None,
@@ -70,6 +73,8 @@ def update_drop(
     Update a drop from a directory.
 
     :param drop_id: The drop_id to update
+    :param add_secondary_owner: new secondary owner for a drop
+    :param remove_secondary_owner: secondary owner to remove from a drop
     :param add_file: new file to be added to a drop
     :param remove_file: file to be removed from a drop
     :param file_name: name of file to be added/removed.
@@ -90,6 +95,16 @@ def update_drop(
         owner=old_drop_metadata.owner,
     )
 
+    # Updating secondary owners
+    if add_secondary_owner is not None \
+            and add_secondary_owner not in old_drop_metadata.other_owners:
+        old_drop_metadata.other_owners.update({add_secondary_owner: 1})
+    if remove_secondary_owner is not None \
+            and remove_secondary_owner in old_drop_metadata.other_owners:
+        old_drop_metadata.other_owners.pop(remove_secondary_owner)
+
+    new_drop_m.other_owners = old_drop_metadata.other_owners
+
     # Updating current files.
     if add_file is not None \
             and add_file not in old_drop_metadata.files \
@@ -101,7 +116,6 @@ def update_drop(
         old_drop_metadata.files.pop(file_name)
     new_drop_m.files = old_drop_metadata.files
 
-    new_drop_m.other_owners = old_drop_metadata.other_owners
     new_drop_m.version = drop_metadata.DropVersion(
         old_drop_metadata.version.version + 1,
         crypto_util.random_int(),
@@ -179,6 +193,67 @@ def get_drop_metadata(
         metadata.write_file(is_latest=True, metadata_location=metadata_dir)
 
     return metadata
+
+
+def simple_get_drop_metadata(drop_id: bytes) -> DropMetadata:
+    """
+    Get drop_metadata object from just drop_id
+    :param drop_id:
+    :return: A drop_metadata object
+    """
+    peers = get_drop_peers(drop_id)
+    drop_metadata = get_drop_metadata(drop_id, peers)
+
+    return drop_metadata
+
+
+def get_owned_drops_metadata() -> List[DropMetadata]:
+    """
+    Get list of metadata objects for owned drops (primary and secondary)
+    :return: list of metadata objects this node owns
+    """
+    drops = list_drops()
+
+    # Get current nodes id
+    priv_key = node_init.load_private_key_from_disk()
+    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+
+    owned_drops = []
+
+    for drop_id in drops:
+        # Get drop_metadata object for drop
+        md = simple_get_drop_metadata(drop_id)
+        if md.owner == node_id:
+            owned_drops.append(md)
+        else:
+            for owner in md.other_owners:
+                if owner == node_id:
+                    owned_drops.append(md)
+
+    return owned_drops
+
+
+def get_subscribed_drops_metadata() -> List[DropMetadata]:
+    """
+    Get list of metadata objects for subscribed drops
+    :return: list of metadata objects this node is subscribed to
+    """
+    drops = list_drops()
+
+    # Get current nodes id
+    priv_key = node_init.load_private_key_from_disk()
+    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+
+    subscribed_drops = []
+
+    # Subscribed drops are those on the disk that this node does not own
+    for drop_id in drops:
+        # Get drop_metadata object for drop
+        md = simple_get_drop_metadata(drop_id)
+        if md.owner != node_id and node_id not in md.other_owners:
+            subscribed_drops.append(md)
+
+    return subscribed_drops
 
 
 def get_file_metadata(
