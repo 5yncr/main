@@ -12,3 +12,4 @@ ADD . /work/
 RUN pip install -e /work/
 
 ENV LOG_LEVEL=INFO
+ENV PYTHONASYNCIODEBUG=1

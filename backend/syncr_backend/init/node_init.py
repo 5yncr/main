@@ -1,8 +1,11 @@
 """Functions for initializing a new node"""
+import asyncio
 import os
 import shutil
 from pathlib import Path
 from typing import Optional
+
+import aiofiles  # type: ignore
 
 from syncr_backend.constants import DEFAULT_INIT_DIR
 from syncr_backend.util import crypto_util
@@ -73,7 +76,8 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
         raise FileExistsError(full_directory)
 
     os.makedirs(full_directory)
-    private_key = crypto_util.generate_private_key()
+    loop = asyncio.get_event_loop()
+    private_key = loop.run_until_complete(crypto_util.generate_private_key())
     write_private_key_to_disk(private_key, full_directory)
 
 
@@ -112,7 +116,7 @@ def write_private_key_to_disk(
         keyfile.close()
 
 
-def load_private_key_from_disk(
+async def load_private_key_from_disk(
     init_directory: Optional[str]=None,
 ) -> crypto_util.rsa.RSAPrivateKey:
     """
@@ -124,8 +128,9 @@ def load_private_key_from_disk(
     logger.debug("reading private key")
     full_directory = get_full_init_directory(init_directory)
 
-    with open(
+    async with aiofiles.open(
         os.path.join(full_directory, "private_key.pem"),
         "rb",
     ) as keyfile:
-        return crypto_util.load_private_key(keyfile.read())
+        key_bytes = await keyfile.read()
+        return crypto_util.load_private_key(key_bytes)

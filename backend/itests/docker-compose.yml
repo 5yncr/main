@@ -31,6 +31,7 @@ services:
             - 2345
         volumes:
             - /share
+            - ./ext:/ext:ro
     syncnode:
         build:
             context: ../

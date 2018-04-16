@@ -21,7 +21,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def initialize_drop(directory: str) -> bytes:
+async def initialize_drop(directory: str) -> bytes:
     """Initialize a drop from a directory. Generates the necesssary drop and
     file metadata files and writes the drop location to the central config dif
 
@@ -29,30 +29,30 @@ def initialize_drop(directory: str) -> bytes:
     :return: The b64 encoded id of the created drop
     """
     logger.info("initializing drop in dir %s", directory)
-    priv_key = node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
-    (drop_m, files_m) = make_drop_metadata(
+    priv_key = await node_init.load_private_key_from_disk()
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
+    (drop_m, files_m) = await make_drop_metadata(
         path=directory,
         drop_name=os.path.basename(directory),
         owner=node_id,
     )
-    drop_m.write_file(
+    await drop_m.write_file(
         is_latest=True,
         metadata_location=os.path.join(
             directory, DEFAULT_DROP_METADATA_LOCATION,
         ),
     )
     for f_m in files_m.values():
-        f_m.write_file(
+        await f_m.write_file(
             os.path.join(directory, DEFAULT_FILE_METADATA_LOCATION),
         )
-    save_drop_location(drop_m.id, directory)
+    await save_drop_location(drop_m.id, directory)
     logger.info("drop initialized with %s files", len(files_m))
 
     return crypto_util.b64encode(drop_m.id)
 
 
-def make_drop_metadata(
+async def make_drop_metadata(
     path: str,
     drop_name: str,
     owner: bytes,
@@ -74,7 +74,9 @@ def make_drop_metadata(
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = file_metadata.make_file_metadata(full_name, drop_id)
+        files[full_name] = await file_metadata.make_file_metadata(
+            full_name, drop_id,
+        )
 
     file_hashes = {
         os.path.relpath(name, path): m.file_id for (name, m) in files.items()

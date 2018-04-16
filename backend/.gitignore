@@ -105,3 +105,6 @@ MANIFEST
 
 # syncr
 .node/
+
+itests/ext/small/
+itests/ext/debian.iso

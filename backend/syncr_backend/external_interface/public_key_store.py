@@ -6,6 +6,8 @@ from abc import abstractmethod
 from typing import Optional
 from typing import Tuple
 
+import aiofiles  # type: ignore
+
 from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
@@ -29,7 +31,7 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
+async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     """
     Provides a PublicKeyStore either by means of DHT or tracker depending
     on config file
@@ -41,7 +43,9 @@ def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     if not os.path.isfile(pks_config_path):
         raise MissingConfigError()
 
-    config_file = json.load(open(pks_config_path))
+    async with aiofiles.open(pks_config_path) as f:
+        config = await f.read()
+        config_file = json.loads(config)
 
     try:
         if config_file['type'] == 'tracker':
@@ -61,11 +65,13 @@ class PublicKeyStore(ABC):
     """Abstract base class for storage and retrieval of public keys"""
 
     @abstractmethod
-    def set_key(self, key):
+    async def set_key(self, key: bytes) -> bool:
         pass
 
     @abstractmethod
-    def request_key(self, request_node_id):
+    async def request_key(
+        self, request_node_id: bytes,
+    ) -> Tuple[bool, Optional[str]]:
         pass
 
 
@@ -84,7 +90,7 @@ class TrackerKeyStore(PublicKeyStore):
         self.tracker_ip = ip
         self.tracker_port = port
 
-    def set_key(self, key: bytes) -> bool:
+    async def set_key(self, key: bytes) -> bool:
         """
         Sets the public key of the this node on the tracker
         :param key: 4096 RSA public key
@@ -96,7 +102,7 @@ class TrackerKeyStore(PublicKeyStore):
             'data': key,
         }
 
-        response = send_request_to_tracker(
+        response = await send_request_to_tracker(
             request, self.tracker_ip,
             self.tracker_port,
         )
@@ -106,7 +112,7 @@ class TrackerKeyStore(PublicKeyStore):
         else:
             return False
 
-    def request_key(
+    async def request_key(
         self, request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
         """
@@ -121,7 +127,7 @@ class TrackerKeyStore(PublicKeyStore):
             'node_id': request_node_id,
         }
 
-        response = send_request_to_tracker(
+        response = await send_request_to_tracker(
             request, self.tracker_ip,
             self.tracker_port,
         )

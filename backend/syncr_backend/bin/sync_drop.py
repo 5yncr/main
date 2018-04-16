@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import asyncio
 
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
@@ -19,8 +20,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    loop = asyncio.get_event_loop()
+
     id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
-    done = drop_util.sync_drop(id, args.directory)
+    done = loop.run_until_complete(drop_util.sync_drop(id, args.directory))
 
     if done:
         print("Drop successfully synced")

@@ -1,12 +1,14 @@
 """Functionality to get peers from a peer store"""
+import asyncio
 import json
 import os
 import threading
-import time
 from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Tuple
+
+import aiofiles  # type: ignore
 
 from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
@@ -32,26 +34,34 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def send_drops_to_dps(
+async def send_drops_to_dps(
     ip: str,
     port: int,
     shutdown_flag: threading.Event,
 ) -> None:
-    this_node_id = node_id_from_private_key(load_private_key_from_disk())
-    dps = get_drop_peer_store(this_node_id)
+    """For each drop tell the dps that ip/port has that drop
+
+    :param ip: The ip/address to tell the dps
+    :param port: The port to tell the dps
+    :param shutdown_flag: Stop when this is set
+    """
+    this_node_id = await node_id_from_private_key(
+        await load_private_key_from_disk(),
+    )
+    dps = await get_drop_peer_store(this_node_id)
 
     while not shutdown_flag.is_set():
         drops = list_drops()
         logger.info("Sending drops to dps")
         for drop in drops:
             logger.debug("Sending drop %s", crypto_util.b64encode(drop))
-            dps.add_drop_peer(drop, ip, port)
+            await dps.add_drop_peer(drop, ip, port)
         sleep_time = TRACKER_DROP_AVAILABILITY_TTL/2 - 1
         logger.debug("Sleeping for %s", sleep_time)
-        time.sleep(sleep_time)
+        await asyncio.sleep(sleep_time)
 
 
-def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
+async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     """
     Provides a DropPeerStore either by means of DHT or tracker depending
     on config file
@@ -64,7 +74,9 @@ def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     if not os.path.isfile(dps_config_path):
         raise MissingConfigError()
 
-    config_file = json.load(open(dps_config_path))
+    async with aiofiles.open(dps_config_path) as f:
+        config_txt = await f.read()
+        config_file = json.loads(config_txt)
 
     try:
         if config_file['type'] == 'tracker':
@@ -84,11 +96,11 @@ class DropPeerStore(ABC):
     """Abstract base class for communication to send/get peer lists"""
 
     @abstractmethod
-    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+    async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         pass
 
     @abstractmethod
-    def request_peers(
+    async def request_peers(
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         pass
@@ -109,7 +121,7 @@ class TrackerPeerStore(DropPeerStore):
         self.tracker_ip = ip
         self.tracker_port = port
 
-    def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+    async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
         Adds their node_id, ip, and port to a list of where a given drop is
         available
@@ -124,7 +136,7 @@ class TrackerPeerStore(DropPeerStore):
             'data': [self.node_id, ip, port],
         }
 
-        response = send_request_to_tracker(
+        response = await send_request_to_tracker(
             request, self.tracker_ip,
             self.tracker_port,
         )
@@ -134,7 +146,7 @@ class TrackerPeerStore(DropPeerStore):
         else:
             return False
 
-    def request_peers(
+    async def request_peers(
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[str, str, str]]]:
         """
@@ -148,7 +160,7 @@ class TrackerPeerStore(DropPeerStore):
             'drop_id': drop_id,
         }
 
-        response = send_request_to_tracker(
+        response = await send_request_to_tracker(
             request, self.tracker_ip,
             self.tracker_port,
         )

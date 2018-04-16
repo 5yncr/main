@@ -1,10 +1,15 @@
 """Helper functions for reading from and writing to the filesystem"""
+import asyncio
 import fnmatch
 import os
+from collections import defaultdict
+from typing import Dict  # noqa
 from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
+
+import aiofiles  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
 from syncr_backend.constants import DEFAULT_IGNORE
@@ -16,7 +21,10 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def write_chunk(
+write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
+
+
+async def write_chunk(
     filepath: str, position: int, contents: bytes, chunk_hash: bytes,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
@@ -40,21 +48,29 @@ def write_chunk(
         return
 
     filepath += DEFAULT_INCOMPLETE_EXT
-    if crypto_util.hash(contents) != chunk_hash:
-        raise crypto_util.VerificationException()
+    computed_hash = await crypto_util.hash(contents)
+    if computed_hash != chunk_hash:
+        raise crypto_util.VerificationException(
+            "Computed: %s, expected: %s" % (
+                crypto_util.b64encode(computed_hash),
+                crypto_util.b64encode(chunk_hash),
+            ),
+        )
     logger.debug(
         "writing chunk with filepath %s and hash %s", filepath,
         crypto_util.b64encode(chunk_hash),
     )
 
-    with open(filepath, 'r+b') as f:
+    await write_locks[filepath].acquire()
+    async with aiofiles.open(filepath, 'r+b') as f:
         pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        f.write(contents)
-        f.flush()
+        await f.seek(pos_bytes)
+        await f.write(contents)
+        await f.flush()
+    write_locks[filepath].release()
 
 
-def read_chunk(
+async def read_chunk(
     filepath: str, position: int, file_hash: Optional[bytes]=None,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> Tuple[bytes, bytes]:
@@ -73,12 +89,14 @@ def read_chunk(
         logger.debug("file %s not done, adding extention", filepath)
         filepath += DEFAULT_INCOMPLETE_EXT
 
-    with open(filepath, 'rb') as f:
+    async with aiofiles.open(filepath, 'rb') as f:
+        logger.debug("async reading %s", filepath)
         pos_bytes = position * chunk_size
-        f.seek(pos_bytes)
-        data = f.read(chunk_size)
+        await f.seek(pos_bytes)
+        data = await f.read(chunk_size)
 
-    h = crypto_util.hash(data)
+    h = await crypto_util.hash(data)
+    logger.debug("async read hash: %s", crypto_util.b64encode(h))
     if file_hash is not None:
         logger.info("input file_hash is not None, checking")
         if h != file_hash:
@@ -86,7 +104,7 @@ def read_chunk(
     return (data, h)
 
 
-def create_file(
+async def create_file(
     filepath: str, size_bytes: int,
 ) -> None:
     """Create a file at filepath of the correct size. May raise relevant IO
@@ -111,9 +129,9 @@ def create_file(
     dirname = os.path.dirname(filepath)
     if not os.path.exists(dirname):
         os.makedirs(dirname, exist_ok=True)
-    with open(filepath, 'wb') as f:
+    async with aiofiles.open(filepath, 'wb') as f:
         logger.debug("truncating %s ot %s bytes", filepath, size_bytes)
-        f.truncate(size_bytes)
+        await f.truncate(size_bytes)
 
 
 def mark_file_complete(filepath: str) -> None:

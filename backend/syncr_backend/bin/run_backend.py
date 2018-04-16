@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import asyncio
 import threading
 from typing import Any
 from typing import List
@@ -58,24 +59,24 @@ def run_backend() -> None:
     else:
         ext_port = int(arguments.port[0])
 
-    send_my_pub_key()
+    loop = asyncio.get_event_loop()
+    loop.create_task(send_my_pub_key())
+
     shutdown_flag = threading.Event()
     request_listen_thread = threading.Thread(
         target=listen_requests,
-        args=[arguments.ip[0], arguments.port[0], shutdown_flag],
+        args=[
+            arguments.ip[0], arguments.port[0], loop,
+            shutdown_flag,
+        ],
     )
     request_listen_thread.start()
-    send_drops_thread = threading.Thread(
-        target=send_drops_to_dps,
-        args=[ext_addr, ext_port, shutdown_flag],
-    )
-    send_drops_thread.start()
+    loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
 
     if not arguments.backendonly:
         read_cmds_from_cmdline()
         shutdown_flag.set()
         network_util.close_socket_thread(arguments.ip[0], arguments.port[0])
-        send_drops_thread.join()
         request_listen_thread.join()
 
 
@@ -136,7 +137,7 @@ def parse_cmd(
         return_list[1] = []
 
 
-def execute_function(function_name: str, args: List[str]):
+def execute_function(function_name: str, args: List[str]) -> None:
     """
     Runs a function with the given args
     TODO: add real drop/metadata request commands that interface

@@ -1,14 +1,13 @@
 """The recieve side of network communication"""
+import asyncio
 import os
-import socket
 import sys
 import threading
-from socket import SHUT_RD
+from asyncio import AbstractEventLoop
 from typing import Optional  # noqa
 
 import bencode  # type: ignore
 
-from syncr_backend.constants import DEFAULT_BUFFER_SIZE
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
@@ -16,7 +15,6 @@ from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
 from syncr_backend.constants import REQUEST_TYPE_DROP_METADATA
 from syncr_backend.constants import REQUEST_TYPE_FILE_METADATA
 from syncr_backend.constants import REQUEST_TYPE_NEW_DROP_METADATA
-from syncr_backend.metadata import drop_metadata
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import DropVersion
 from syncr_backend.metadata.drop_metadata import get_drop_location
@@ -29,11 +27,14 @@ from syncr_backend.util.network_util import send_response
 logger = get_logger(__name__)
 
 
-def request_dispatcher(request: dict, conn: socket.socket) -> None:
+async def request_dispatcher(
+    request: dict, writer: asyncio.StreamWriter,
+) -> None:
     """
+    Handle and dispatch requests
 
     :param request: dict containing request data
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter to pass to the handle function
     :return: None
     """
     function_map = {
@@ -47,11 +48,33 @@ def request_dispatcher(request: dict, conn: socket.socket) -> None:
     logger.info("incomming request type: %s", req_type)
     handle_function = function_map[req_type]
 
-    handle_function(request, conn)
+    await handle_function(request, writer)
 
 
-def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
+async def async_handle_request(
+    reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+) -> None:
+    """Handle a request by reading the data and passing it to dispatcher
+
+    :param reader: StreamReader
+    :param writer: StreamWriter
     """
+    request = b''
+    while 1:
+        data = await reader.read()
+        if not data:
+            break
+        else:
+            request += data
+        logger.info('Data received')
+    await request_dispatcher(bencode.decode(request), writer)
+
+
+async def handle_request_drop_metadata(
+    request: dict, writer: asyncio.StreamWriter,
+) -> None:
+    """
+    Handle a drop metadata request
 
     :param request:
     {
@@ -61,10 +84,10 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
     "version": string (optional),
     "nonce": string (optional)
     }
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter
     :return: None
     """
-    file_location = get_drop_location(request['drop_id'])
+    file_location = await get_drop_location(request['drop_id'])
     file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
     if request.get('version') is not None and request.get('nonce') is not None:
         drop_version = DropVersion(
@@ -72,10 +95,10 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
         )  # type: Optional[DropVersion]
     else:
         drop_version = None
-    request_drop_metadata = DropMetadata.read_file(
-        request['drop_id'],
-        file_location,
-        drop_version,
+    request_drop_metadata = await DropMetadata.read_file(
+        id=request['drop_id'],
+        metadata_location=file_location,
+        version=drop_version,
     )
 
     if request_drop_metadata is None:
@@ -88,13 +111,15 @@ def handle_request_drop_metadata(request: dict, conn: socket.socket) -> None:
         logger.info("sending drop metadata")
         response = {
             'status': 'ok',
-            'response': request_drop_metadata.encode(),
+            'response': await request_drop_metadata.encode(),
         }
 
-    send_response(conn, response)
+    await send_response(writer, response)
 
 
-def handle_request_file_metadata(request: dict, conn: socket.socket) -> None:
+async def handle_request_file_metadata(
+    request: dict, writer: asyncio.StreamWriter,
+) -> None:
     """
     Handles a request for a file metadata
     :param request:
@@ -104,10 +129,10 @@ def handle_request_file_metadata(request: dict, conn: socket.socket) -> None:
     "file_id": string
     'drop_id": string
     }
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
@@ -125,10 +150,12 @@ def handle_request_file_metadata(request: dict, conn: socket.socket) -> None:
             'response': request_file_metadata.encode(),
         }
 
-    send_response(conn, response)
+    await send_response(writer, response)
 
 
-def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
+async def handle_request_chunk_list(
+    request: dict, writer: asyncio.StreamWriter,
+) -> None:
     """
     Handles a request for a file chunk list avaiable on this node
     :param request:
@@ -138,10 +165,10 @@ def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
     'drop_id": string
     "file_id": string
     }
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
@@ -153,17 +180,19 @@ def handle_request_chunk_list(request: dict, conn: socket.socket) -> None:
             'error': ERR_NEXIST,
         }
     else:
-        chunks = request_file_metadata.downloaded_chunks
+        chunks = await request_file_metadata.downloaded_chunks
         logger.info("sending chunk list")
         response = {
             'status': 'ok',
             'response': list(chunks),
         }
 
-    send_response(conn, response)
+    await send_response(writer, response)
 
 
-def handle_request_chunk(request: dict, conn: socket.socket) -> None:
+async def handle_request_chunk(
+    request: dict, writer: asyncio.StreamWriter,
+) -> None:
     """
     Handles a request for a chunk that is avaliable on this chunk
     :param request:
@@ -174,19 +203,19 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
     'drop_id": string
     "index": string,
     }
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter
     :return: None
     """
-    request_file_metadata = get_file_metadata_from_drop_id(
+    request_file_metadata = await get_file_metadata_from_drop_id(
         request['drop_id'],
         request['file_id'],
     )
-    drop_location = drop_metadata.get_drop_location(request['drop_id'])
+    drop_location = await get_drop_location(request['drop_id'])
     drop_metadata_location = os.path.join(
         drop_location, DEFAULT_DROP_METADATA_LOCATION,
     )
-    request_drop_metadata = DropMetadata.read_file(
-        request['drop_id'], drop_metadata_location,
+    request_drop_metadata = await DropMetadata.read_file(
+        id=request['drop_id'], metadata_location=drop_metadata_location,
     )
 
     if request_file_metadata is None or request_drop_metadata is None:
@@ -199,22 +228,23 @@ def handle_request_chunk(request: dict, conn: socket.socket) -> None:
         file_name = request_drop_metadata.get_file_name_from_id(
             request['file_id'],
         )
-        chunk = read_chunk(
+        chunk = (await read_chunk(
             os.path.join(
                 drop_location, file_name,
             ), request['index'],
-        )[0]
+        ))[0]
         logger.info("sending chunk")
+        logger.debug("chunk len: %s", len(chunk))
         response = {
             'status': 'ok',
             'response': chunk,
         }
 
-    send_response(conn, response)
+    await send_response(writer, response)
 
 
-def handle_request_new_drop_metadata(
-    request: dict, conn: socket.socket,
+async def handle_request_new_drop_metadata(
+    request: dict, writer: asyncio.StreamWriter,
 ) -> None:
     """
     :param request:
@@ -224,7 +254,7 @@ def handle_request_new_drop_metadata(
     "latest_version_id": int,
     "latest_version_nonce": int
     }
-    :param conn: socket.accept() connection
+    :param writer: StreamWriter
     :return: None
     """
     logger.warning("tried and failed to accept a new_drop_metadata request")
@@ -234,36 +264,25 @@ def handle_request_new_drop_metadata(
 def listen_requests(
     tcp_ip: str,
     tcp_port: str,
+    loop: AbstractEventLoop,
     shutdown_flag: threading.Event,
 ) -> None:
-    """
-    runs the main tcp requests loop
-    :param tcp_ip: ip to bind to
-    :param tcp_port: port to bind to
-    :param shutdown_flag: flag to be set to shutdown the thread
-    :return:
-    """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    logger.info("Binding to %s:%s", tcp_ip, tcp_port)
-    s.bind((tcp_ip, int(tcp_port)))
-    s.listen(5)
+    """Run the request server until closing"""
+    coro = asyncio.start_server(
+        async_handle_request, tcp_ip, int(tcp_port), loop=loop,
+    )
+    server = loop.run_until_complete(coro)
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
 
-    while not shutdown_flag.is_set():
-        conn, addr = s.accept()
-        logger.info('Connection address: %s', addr)
-        request = b''
-        while 1:
-            data = conn.recv(DEFAULT_BUFFER_SIZE)
-            if not data:
-                break
-            else:
-                request += data
-            logger.info('Data received')
-        conn.shutdown(SHUT_RD)
-        if len(request) > 0:
-            request_dispatcher(bencode.decode(request), conn)
-        conn.close()
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
 
 
 if __name__ == '__main__':
-    listen_requests(sys.argv[1], sys.argv[0], threading.Event())
+    listen_requests(
+        sys.argv[1], sys.argv[0], asyncio.get_event_loop(), threading.Event(),
+    )
