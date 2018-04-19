@@ -11,10 +11,9 @@ while [[ ! "$(cat /share/large)" ]]; do
     sleep 5
 done
 
-sleep 5
+printf "sync_drop $(cat /share/small) /small;sync_drop $(cat /share/large) /large" > /work/itests/syncnode_debug_commands
+run_backend 0.0.0.0 2345 --external_address $(hostname) --debug_commands /work/itests/syncnode_debug_commands
 
-sync_drop "$(cat /share/small)" /small
-sync_drop "$(cat /share/large)" /large
 
 check_drop "$(cat /share/small)"
 check_drop "$(cat /share/large)"

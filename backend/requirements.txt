@@ -12,6 +12,7 @@ cryptography==2.1.4
 flake8==3.5.0
 identify==1.0.7
 idna==2.6
+kademlia==1.0
 mccabe==0.6.1
 mypy==0.560
 nodeenv==1.2.0
@@ -24,7 +25,9 @@ pycparser==2.18
 pyflakes==1.6.0
 pytest==3.4.1
 PyYAML==3.12
+rpcudp==3.0.0
 six==1.11.0
 tox==2.9.1
 typed-ast==1.1.0
+u-msgpack-python==2.5.0
 virtualenv==15.1.0

@@ -213,6 +213,7 @@ async def send_request_to_node(
     :return: node response
     """
     reader, writer = await asyncio.open_connection(ip, port)
+
     writer.write(bencode.encode(request))
     writer.write_eof()
     await writer.drain()

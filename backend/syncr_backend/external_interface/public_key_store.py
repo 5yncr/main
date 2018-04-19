@@ -1,22 +1,17 @@
 """Functionality to get public keys from a public key store"""
-import json
-import os
 from abc import ABC
 from abc import abstractmethod
+from typing import List
 from typing import Optional
 from typing import Tuple
 
-import aiofiles  # type: ignore
-
-from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_KEY
 from syncr_backend.constants import TRACKER_REQUEST_POST_KEY
+from syncr_backend.external_interface.dht_util import \
+    get_dht
 from syncr_backend.external_interface.store_exceptions import (
     IncompleteConfigError
-)
-from syncr_backend.external_interface.store_exceptions import (
-    MissingConfigError
 )
 from syncr_backend.external_interface.store_exceptions import (
     UnsupportedOptionError
@@ -24,7 +19,7 @@ from syncr_backend.external_interface.store_exceptions import (
 from syncr_backend.external_interface.tracker_util import (
     send_request_to_tracker
 )
-from syncr_backend.init.node_init import get_full_init_directory
+from syncr_backend.util.fileio_util import load_config_file
 from syncr_backend.util.log_util import get_logger
 
 
@@ -37,24 +32,26 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     on config file
     :return: PublicKeyStore
     """
-    init_directory = get_full_init_directory(None)
-    pks_config_path = os.path.join(init_directory, DEFAULT_PKS_CONFIG_FILE)
-
-    if not os.path.isfile(pks_config_path):
-        raise MissingConfigError()
-
-    async with aiofiles.open(pks_config_path) as f:
-        config = await f.read()
-        config_file = json.loads(config)
+    config_file = await load_config_file()
 
     try:
+        logger.debug("Keystore is of type %s", config_file['type'])
         if config_file['type'] == 'tracker':
             pks = TrackerKeyStore(
                 node_id, config_file['ip'], int(config_file['port']),
             )
             return pks
         elif config_file['type'] == 'dht':
-            raise NotImplementedError()
+            return DHTKeyStore(
+                node_id,
+                list(
+                    zip(
+                        config_file['bootstrap_ips'],
+                        config_file['bootstrap_ports'],
+                    ),
+                ),
+                config_file['listen_port'],
+            )
         else:
             raise UnsupportedOptionError()
     except KeyError:
@@ -73,6 +70,51 @@ class PublicKeyStore(ABC):
         self, request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
         pass
+
+
+class DHTKeyStore(PublicKeyStore):
+    def __init__(
+        self,
+        node_id: bytes, bootstrap_list: List[Tuple[str, int]],
+        listen_port: int,
+    ) -> None:
+        """
+        Sets up tracker key store
+        :param node_id: node id and SHA256 hash
+        :param bootstrap_list: list of ip,port to bootstrap connect to dht
+        """
+        self.node_id = node_id
+        self.node_instance = get_dht()
+
+    async def set_key(self, key: bytes) -> bool:
+        """
+        Sets the public key of the this node on the DHT
+        :param key: 4096 RSA public key
+        :return: boolean on success of setting key
+        """
+        try:
+            await self.node_instance.set(self.node_id, key)
+            return True
+        except Exception:
+            return False
+
+    async def request_key(
+        self,
+        request_node_id: bytes,
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Asks DHT for the public key of a given node for sake of signature
+        verification
+        :param request_node_id: SHA256 hash
+        :return: boolean (success of getting key),
+                2048 RSA public key (if boolean is True)
+        """
+
+        result = str(await self.node_instance.get(request_node_id), 'utf-8')
+        if result is not None:
+            return True, result
+        else:
+            return False, ""
 
 
 class TrackerKeyStore(PublicKeyStore):

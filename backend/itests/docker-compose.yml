@@ -22,7 +22,15 @@ services:
         command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
         ports:
             - 2345
+    node4:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "node_init; make_tracker_configs tracker 2346; while true; do sleep 5; done"
+        ports:
+            - 2345
     hostnode:
+        hostname: hostnode
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
@@ -32,7 +40,33 @@ services:
         volumes:
             - /share
             - ./ext:/ext:ro
+    hostnode_dht:
+        hostname: hostnode_dht
+        environment:
+          - USE_DHT=yes
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "/work/itests/hostnode.sh"
+        ports:
+            - 2345
+        volumes:
+            - /share
+            - ./ext:/ext:ro
+    syncnode_dht:
+        hostname: syncnode_dht
+        environment:
+          - USE_DHT=yes
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "echo hi"
+        ports:
+            - 2345
+        volumes_from:
+            - hostnode_dht:ro
     syncnode:
+        hostname: syncnode
         build:
             context: ../
             dockerfile: ./itests/Dockerfile
@@ -41,6 +75,20 @@ services:
             - 2345
         volumes_from:
             - hostnode:ro
+    dht_node:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "run_dht_server 2345"
+        ports:
+            - 2345
+    dht_node2:
+        build:
+            context: ../
+            dockerfile: ./itests/Dockerfile
+        command: sh -c "run_dht_server 2345 --bootstrap-peers dht_node:2345"
+        ports:
+            - 2345
 
     tracker:
         build:

@@ -9,5 +9,5 @@ if [[ -z "${USE_DHT}" ]]
 then
   make_tracker_configs tracker 2346
 else
-  make_dht_configs 2345 --bootstrap-peers dht_node:2345
+  make_dht_configs 2345
 fi

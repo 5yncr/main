@@ -25,4 +25,4 @@ cp /large/debian.iso /large/debian8.iso
 drop_init /small > /share/small
 drop_init /large > /share/large
 
-run_backend 0.0.0.0 2345 --external_address hostnode --backendonly
+run_backend 0.0.0.0 2345 --external_address $(hostname) --backendonly

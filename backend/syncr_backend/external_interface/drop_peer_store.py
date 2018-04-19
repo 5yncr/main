@@ -1,33 +1,28 @@
 """Functionality to get peers from a peer store"""
 import asyncio
-import json
-import os
 import threading
 from abc import ABC
 from abc import abstractmethod
 from typing import List
 from typing import Tuple
 
-import aiofiles  # type: ignore
-
-from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.constants import TRACKER_OK_RESULT
 from syncr_backend.constants import TRACKER_REQUEST_GET_PEERS
 from syncr_backend.constants import TRACKER_REQUEST_POST_PEER
+from syncr_backend.external_interface.dht_util import \
+    get_dht
 from syncr_backend.external_interface.store_exceptions import \
     IncompleteConfigError
-from syncr_backend.external_interface.store_exceptions import \
-    MissingConfigError
 from syncr_backend.external_interface.store_exceptions import \
     UnsupportedOptionError
 from syncr_backend.external_interface.tracker_util import \
     send_request_to_tracker
-from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.init.node_init import load_private_key_from_disk
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.util import crypto_util
 from syncr_backend.util.crypto_util import node_id_from_private_key
+from syncr_backend.util.fileio_util import load_config_file
 from syncr_backend.util.log_util import get_logger
 
 
@@ -55,8 +50,9 @@ async def send_drops_to_dps(
         logger.info("Sending drops to dps")
         for drop in drops:
             logger.debug("Sending drop %s", crypto_util.b64encode(drop))
+
             await dps.add_drop_peer(drop, ip, port)
-        sleep_time = TRACKER_DROP_AVAILABILITY_TTL/2 - 1
+        sleep_time = TRACKER_DROP_AVAILABILITY_TTL / 2 - 1
         logger.debug("Sleeping for %s", sleep_time)
         await asyncio.sleep(sleep_time)
 
@@ -68,15 +64,7 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     :param node_id: bytes of the node id for this node
     :return: DropPeerStore
     """
-    init_directory = get_full_init_directory(None)
-    dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)
-
-    if not os.path.isfile(dps_config_path):
-        raise MissingConfigError()
-
-    async with aiofiles.open(dps_config_path) as f:
-        config_txt = await f.read()
-        config_file = json.loads(config_txt)
+    config_file = await load_config_file()
 
     try:
         if config_file['type'] == 'tracker':
@@ -85,7 +73,16 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
             )
             return pks
         elif config_file['type'] == 'dht':
-            raise NotImplementedError()
+            return DHTPeerStore(
+                node_id,
+                list(
+                    zip(
+                        config_file['bootstrap_ips'],
+                        config_file['bootstrap_ports'],
+                    ),
+                ),
+                config_file['listen_port'],
+            )
         else:
             raise UnsupportedOptionError()
     except KeyError:
@@ -102,8 +99,64 @@ class DropPeerStore(ABC):
     @abstractmethod
     async def request_peers(
         self, drop_id: bytes,
-    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         pass
+
+
+class DHTPeerStore(DropPeerStore):
+    def __init__(
+        self,
+        node_id: bytes,
+        bootstrap_list: List[Tuple[str, int]],
+        listen_port: int,
+    ) -> None:
+        """
+        Sets up DHT peer store
+        :param node_id: node_id of this node
+        :param bootstrap_list: list of ip,port to bootstrap connect to dht
+        """
+        self.node_id = node_id
+        self.listen_port = listen_port
+        self.node_instance = get_dht()
+
+    async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+        """
+        Add entry to dht
+        :param drop_id: drop_id entry to update
+        :param ip: ip to recieve requests regarging drop on
+        :param port: port to recieve requests regarging drop on
+        """
+        logger.debug("addingdrop peers %s %s %s", drop_id, ip, port)
+
+        await self.node_instance.set(
+            drop_id,
+            crypto_util.encode_peerlist(
+                [(self.node_id, ip, port), ],
+            ),
+        )
+        logger.debug("DHT added drop peer : %s", str((ip, port)))
+        return True
+
+    async def request_peers(
+        self, drop_id: bytes,
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
+
+        logger.debug("requesting drop peers %s", drop_id)
+        # result is bytes representation of frozen set of peers
+        result = await self.node_instance.get(drop_id)
+        if result is not None:
+            logger.debug(
+                "DHT get drop peer : %s",
+                crypto_util.decode_peerlist(result),
+            )
+            # return list of contents of frozenset
+            decoded_peerlist = crypto_util.decode_peerlist(result)
+            if decoded_peerlist is None:
+                return False, []
+            return True, decoded_peerlist
+        else:
+            logger.debug("DHT failed get drop peer, drop_id: %s", str(drop_id))
+            return False, []
 
 
 class TrackerPeerStore(DropPeerStore):
@@ -148,7 +201,7 @@ class TrackerPeerStore(DropPeerStore):
 
     async def request_peers(
         self, drop_id: bytes,
-    ) -> Tuple[bool, List[Tuple[str, str, str]]]:
+    ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash

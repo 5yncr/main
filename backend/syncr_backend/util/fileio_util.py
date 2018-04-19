@@ -1,8 +1,10 @@
 """Helper functions for reading from and writing to the filesystem"""
 import asyncio
 import fnmatch
+import json
 import os
 from collections import defaultdict
+from typing import Any
 from typing import Dict  # noqa
 from typing import Iterator
 from typing import List
@@ -12,8 +14,12 @@ from typing import Tuple
 import aiofiles  # type: ignore
 
 from syncr_backend.constants import DEFAULT_CHUNK_SIZE
+from syncr_backend.constants import DEFAULT_DPS_CONFIG_FILE
 from syncr_backend.constants import DEFAULT_IGNORE
 from syncr_backend.constants import DEFAULT_INCOMPLETE_EXT
+from syncr_backend.external_interface.store_exceptions import \
+    MissingConfigError
+from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.util import crypto_util
 from syncr_backend.util.log_util import get_logger
 
@@ -22,6 +28,20 @@ logger = get_logger(__name__)
 
 
 write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
+
+
+async def load_config_file() -> Dict[str, Any]:
+    init_directory = get_full_init_directory(None)
+    dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)
+
+    if not os.path.isfile(dps_config_path):
+        raise MissingConfigError()
+
+    async with aiofiles.open(dps_config_path) as f:
+        config_txt = await f.read()
+        config_file = json.loads(config_txt)
+
+    return config_file
 
 
 async def write_chunk(
