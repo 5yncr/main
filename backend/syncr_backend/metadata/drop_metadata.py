@@ -323,7 +323,7 @@ class DropMetadata(object):
             previous_versions=[
                 DropVersion(
                     v["version"],
-                    v["version_nonce"],
+                    v["nonce"],
                 ) for v in decoded["previous_versions"]
             ],
             primary_owner=decoded["primary_owner"],

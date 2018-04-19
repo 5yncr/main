@@ -58,6 +58,7 @@ async def make_drop_metadata(
     owner: bytes,
     other_owners: Dict[bytes, int]={},
     ignore: List[str]=[],
+    drop_id: Optional[bytes]=None
 ) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
     """Makes drop metadata and file metadatas from a directory
 
@@ -70,7 +71,8 @@ async def make_drop_metadata(
     metadata
     """
     logger.info("creating drop metadata for drop name %s", drop_name)
-    drop_id = drop_metadata.gen_drop_id(owner)
+    if drop_id is None:
+        drop_id = drop_metadata.gen_drop_id(owner)
     files = {}
     for (dirpath, filename) in fileio_util.walk_with_ignore(path, ignore):
         full_name = os.path.join(dirpath, filename)

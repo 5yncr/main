@@ -125,50 +125,64 @@ async def update_drop(
     :param file_name: name of file to be added/removed.
 
     """
-    peers = await get_drop_peers(drop_id)
-    old_drop_metadata = await get_drop_metadata(drop_id, peers)
-    priv_key = await node_init.load_private_key_from_disk()
-    node_id = crypto_util.node_id_from_public_key(priv_key.public_key())
+    drop_directory = await get_drop_location(drop_id)
+    old_drop_m = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=os.path.join(
+            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
 
-    if old_drop_metadata.owner != node_id:
+    if old_drop_m is None:
+        peers = await get_drop_peers(drop_id)
+        old_drop_m = await get_drop_metadata(drop_id, peers)
+    priv_key = await node_init.load_private_key_from_disk()
+    node_id = await crypto_util.node_id_from_public_key(priv_key.public_key())
+
+    if node_id not in old_drop_m.other_owners and node_id != old_drop_m.owner:
         raise PermissionError("You are not the owner of this drop")
 
-    drop_directory = await get_drop_location(drop_id)
     (new_drop_m, new_files_m) = await drop_init.make_drop_metadata(
         path=drop_directory,
-        drop_name=old_drop_metadata.name,
-        owner=old_drop_metadata.owner,
+        drop_name=old_drop_m.name,
+        owner=old_drop_m.owner,
+        other_owners=old_drop_m.other_owners,
+        drop_id=old_drop_m.id,
+        # TODO: ignore?
     )
 
     # Updating secondary owners
     if add_secondary_owner is not None \
-            and add_secondary_owner not in old_drop_metadata.other_owners:
-        old_drop_metadata.other_owners.update({add_secondary_owner: 1})
+            and add_secondary_owner not in old_drop_m.other_owners:
+        old_drop_m.other_owners.update({add_secondary_owner: 1})
     if remove_secondary_owner is not None \
-            and remove_secondary_owner in old_drop_metadata.other_owners:
-        old_drop_metadata.other_owners.pop(remove_secondary_owner)
+            and remove_secondary_owner in old_drop_m.other_owners:
+        old_drop_m.other_owners.pop(remove_secondary_owner)
 
-    new_drop_m.other_owners = old_drop_metadata.other_owners
+    new_drop_m.other_owners = old_drop_m.other_owners
 
     # Updating current files.
     if add_file is not None \
-            and add_file not in old_drop_metadata.files \
+            and add_file not in old_drop_m.files \
             and file_name is not None:
-        old_drop_metadata.files.update({file_name: add_file})
+        old_drop_m.files.update({file_name: add_file})
     if remove_file is not None \
-            and remove_file in old_drop_metadata.files \
+            and remove_file in old_drop_m.files \
             and file_name is not None:
-        old_drop_metadata.files.pop(file_name)
-    new_drop_m.files = old_drop_metadata.files
+        old_drop_m.files.pop(file_name)
+    new_drop_m.files = old_drop_m.files
 
+    new_drop_m.previous_versions.append(old_drop_m.version)
     new_drop_m.version = drop_metadata.DropVersion(
-        old_drop_metadata.version.version + 1,
+        old_drop_m.version.version + 1,
         crypto_util.random_int(),
     )
     # deletes the existing metadata files
-    shutil.rmtree(
+    await asyncio.get_event_loop().run_in_executor(
+        None,
+        shutil.rmtree,
         os.path.join(
-            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+            drop_directory, DEFAULT_FILE_METADATA_LOCATION,
         ),
     )
 
@@ -585,3 +599,16 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     shuffle(peers)
 
     return peers
+
+
+def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
+    metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
+    files = os.listdir(metadata_dir)
+
+    for f in files:
+        full_name = os.path.join(metadata_dir, f)
+        if os.path.isfile(full_name) and f.endswith("_LATEST"):
+            b = f.split("_")[0]
+            return crypto_util.b64decode(b.encode('utf-8'))
+
+    return None
