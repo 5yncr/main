@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any
 from typing import Dict  # NOQA
 from typing import List
@@ -7,6 +8,7 @@ from typing import Tuple
 from kademlia.network import Server  # type: ignore
 from kademlia.storage import ForgetfulStorage  # type: ignore
 
+from syncr_backend.constants import TRACKER_DROP_AVAILABILITY_TTL
 from syncr_backend.util import crypto_util
 from syncr_backend.util.log_util import get_logger
 
@@ -71,9 +73,51 @@ class DropPeerDHTStorage(ForgetfulStorage):
         """
 
         """
-        self.timeouts = {}  # type: Dict[Tuple[Any, int, str], int]
+        self.timeouts = {}  # type: Dict[Tuple[int, Tuple[Any, int, str]], int]
 
         super().__init__()
+
+    def cull_peerlist(self, key: Any) -> None:
+        """
+        Cull peerlist at key of out of date entries
+        If entry at key is not a peerlist, do nothing
+        :param key: key of peerlist
+        """
+        current_time = int(time.time())
+        item = self.data[key][1]
+        itempeerlist = crypto_util.decode_peerlist(item)
+        if itempeerlist is not None:
+            itempeerlist = list(
+                filter(
+                    lambda x: (
+                        ((key, x) not in self.timeouts) or
+                        (
+                            current_time - self.timeouts[(key, x)] <
+                            TRACKER_DROP_AVAILABILITY_TTL
+                        )
+                    ),
+                    itempeerlist,
+                ),
+            )
+            timeout_key_list = list(
+                filter(
+                    lambda x: self.timeouts[x] < TRACKER_DROP_AVAILABILITY_TTL,
+                    self.timeouts,
+                ),
+            )
+            timeout_value_list = list(
+                map(lambda x: self.timeouts[x], timeout_key_list),
+            )
+            self.timeouts = dict(zip(timeout_key_list, timeout_value_list))
+
+    def __getitem__(self, key: Any) -> Any:
+        """
+        Gets item from storage
+        if item is an encoded peerlist, it culls outdated values
+        :param key: key to access value in dht
+        """
+        self.cull_peerlist(key)
+        return super().__getitem__(key)
 
     def __setitem__(self, key: Any, value: Any) -> None:
         """
@@ -82,15 +126,16 @@ class DropPeerDHTStorage(ForgetfulStorage):
         """
         valuepeer = crypto_util.decode_peerlist(value)
         if valuepeer is not None:
+            self.timeouts[(key, valuepeer[0])] = int(time.time())
             if key in self.data:
                 peerlist = crypto_util.decode_peerlist(
                     self.data[key][1],
                 )
                 if peerlist is not None:
-                    new_peerlist = \
-                        crypto_util.encode_peerlist(
-                            (peerlist + valuepeer),
-                        )
+                    # remove duplicates and encode
+                    new_peerlist = crypto_util.encode_peerlist(
+                        list(set(peerlist + valuepeer)),
+                    )
                     return super().__setitem__(key, new_peerlist)
 
             return super().__setitem__(
