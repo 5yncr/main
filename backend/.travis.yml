@@ -7,6 +7,7 @@ env:
     - TOXENV=py3,coverage,mypy
     - TOXENV=itests_simple
     - TOXENV=itests_complex
+    - TOXENV=itests_dht
 script:
     - flake8 syncr_backend tests
     - pycodestyle syncr_backend tests

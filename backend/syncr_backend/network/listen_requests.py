@@ -261,6 +261,15 @@ async def handle_request_new_drop_metadata(
     pass
 
 
+async def start_listen_server(
+    tcp_ip: str,
+    tcp_port: str,
+) -> asyncio.events.AbstractServer:
+    return await asyncio.start_server(
+        async_handle_request, tcp_ip, int(tcp_port),
+    )
+
+
 def listen_requests(
     tcp_ip: str,
     tcp_port: str,

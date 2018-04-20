@@ -10,7 +10,8 @@ from syncr_backend.external_interface.drop_peer_store import send_drops_to_dps
 from syncr_backend.init import drop_init
 from syncr_backend.init import node_init
 from syncr_backend.metadata.drop_metadata import send_my_pub_key
-from syncr_backend.network.listen_requests import listen_requests
+from syncr_backend.network.handle_frontend import setup_frontend_server
+from syncr_backend.network.listen_requests import start_listen_server
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 from syncr_backend.util.fileio_util import load_config_file
@@ -80,43 +81,43 @@ def run_backend() -> None:
         )
         initialize_dht(ip_port_list, config_file['listen_port'])
 
-    asyncio.run_coroutine_threadsafe(
-        send_my_pub_key(),
-        loop,
-    )
+    loop.create_task(send_my_pub_key())
 
     shutdown_flag = threading.Event()
-    request_listen_thread = threading.Thread(
-        target=listen_requests,
-        args=[
-            arguments.ip[0], arguments.port[0], loop,
-            shutdown_flag,
-        ],
+    listen_server = loop.run_until_complete(
+        start_listen_server(arguments.ip[0], arguments.port[0]),
     )
-    # asyncio.run_coroutine_threadsafe(
-    #    send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
-    #    loop
-    # )
-    loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
-    request_listen_thread.start()
-
-    # loop.create_task(send_drops_to_dps(ext_addr, ext_port, shutdown_flag))
+    frontend_server = loop.run_until_complete(
+        setup_frontend_server(),
+    )
+    dps_send = loop.create_task(
+        send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
+    )
 
     if not arguments.backendonly:
         if arguments.debug_commands is None:
-            read_cmds_from_cmdline()
+            print("Not implemented")
         else:
-            run_debug_commands(arguments.debug_commands)
+            t = threading.Thread(
+                target=run_debug_commands,
+                args=[arguments.debug_commands, loop],
+            )
+            t.start()
+    try:
+        loop.run_forever()
+    finally:
         shutdown_flag.set()
-        loop = asyncio.get_event_loop()
-        # network_util.close_socket_thread(
-        #     arguments.ip[0], int(arguments.port[0]),
-        # )
+        listen_server.close()
+        frontend_server.close()
+        dps_send.cancel()
+        loop.run_until_complete(loop.shutdown_asyncgens())
         loop.stop()
-        request_listen_thread.join()
+        loop.close()
 
 
-def run_debug_commands(commands_file: str) -> None:
+def run_debug_commands(
+    commands_file: str, loop: asyncio.AbstractEventLoop,
+) -> None:
     """
     Read and execute commands a list of semicolon separated commands as input
     :param commands: list of semicolon separated commands
@@ -129,32 +130,9 @@ def run_debug_commands(commands_file: str) -> None:
 
         args = command.split(' ')
         logger.info("Ran Command %s", args)
-        execute_function(args[0], args[1:])
+        execute_function(args[0], args[1:], loop)
 
-
-def read_cmds_from_cmdline() -> None:
-    """
-    Read and execute commands given as cmdline input
-    """
-    exit_flag = False
-    while not exit_flag:
-        command = input("5yncr >>> ").split(' ')
-        return_list = ["", []]
-        parse_cmd_thread = threading.Thread(
-            target=parse_cmd,
-            args=[command, return_list],
-        )
-        parse_cmd_thread.start()
-        parse_cmd_thread.join()
-        function_name = str(return_list[0])
-        args = list(return_list[1])
-
-        if function_name is None:
-            continue
-        if function_name != 'exit':
-            execute_function(function_name, args)
-        else:
-            exit_flag = True
+    loop.stop()
 
 
 def parse_cmd(
@@ -189,7 +167,9 @@ def parse_cmd(
         return_list[1] = []
 
 
-def execute_function(function_name: str, args: List[str]) -> None:
+def execute_function(
+    function_name: str, args: List[str], loop: asyncio.AbstractEventLoop,
+) -> None:
     """
     Runs a function with the given args
     TODO: add real drop/metadata request commands that interface
@@ -199,7 +179,6 @@ def execute_function(function_name: str, args: List[str]) -> None:
     :param function_name: string name of the function to run
     :param args: arguments for the function to run
     """
-    loop = asyncio.get_event_loop()
     # for functions that create or destroy the init directory
     if function_name == "node_init":
         node_init.initialize_node(*args)
