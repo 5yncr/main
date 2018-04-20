@@ -29,11 +29,13 @@ from syncr_backend.constants import ACTION_TRANSFER_OWNERSHIP
 from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
 from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
+from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
 from syncr_backend.metadata.drop_metadata import DropMetadata
+from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
 from syncr_backend.util.drop_util import get_owned_drops_metadata
@@ -345,13 +347,27 @@ async def handle_delete_drop(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: backend logic to delete a drop
-        # TODO: Test if given drop_id is valid.
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'drop successfully deleted',
-        }
+        file_location = await get_drop_location(request['drop_id'])
+        file_location = os.path.join(
+            file_location,
+            DEFAULT_DROP_METADATA_LOCATION,
+        )
+        drop_metadata = await DropMetadata.read_file(
+            id=request['drop_id'],
+            metadata_location=file_location,
+        )
+        if drop_metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+        else:
+            await drop_metadata.delete()
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'drop successfully deleted',
+            }
 
     await send_response(conn, response)
 
@@ -732,13 +748,26 @@ async def handle_unsubscribe(
             'error': ERR_INVINPUT,
         }
     else:
-        # TODO: Backend logic to unsubscribe from drop.
-        # TODO: Handle if given drop_id is not valid
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'message': 'unsubscribed from drop ' + request['drop_id'],
-        }
+        file_location = await get_drop_location(request['drop_id'])
+        file_location = os.path.join(
+            file_location, DEFAULT_DROP_METADATA_LOCATION,
+        )
+        drop_metadata = await DropMetadata.read_file(
+            id=request['drop_id'],
+            metadata_location=file_location,
+        )
+        if drop_metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+        else:
+            await drop_metadata.unsubscribe()
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'unsubscribed from drop ' + request['drop_id'],
+            }
 
     await send_response(conn, response)
 

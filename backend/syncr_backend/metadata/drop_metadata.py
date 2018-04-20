@@ -1,6 +1,7 @@
 "The dorp metadata object and related functions"""
 import logging
 import os
+import shutil
 from typing import Any
 from typing import Dict
 from typing import Iterator
@@ -177,6 +178,27 @@ class DropMetadata(object):
 
         self.log.error("tried to lookup a file that doesn't exist")
         raise FileNotFoundError
+
+    async def unsubscribe(self) -> None:
+        """Removes the refrence in the .5yncr folder therefore preventing
+        future updates
+
+        :return: None
+        """
+        save_path = _get_save_path()
+        encoded_drop_id = crypto_util.b64encode(self.id).decode('utf-8')
+        drop_loc_file = os.path.join(save_path, encoded_drop_id)
+        os.remove(drop_loc_file)
+
+    async def delete(self) -> None:
+        """Deletes the drop from the local system and unsubscribes
+
+        :return: None
+        """
+        self.unsubscribe()
+        drop_loc = await get_drop_location(self.id)
+        self.log.debug("deleteing drop folder: %s", self.id)
+        shutil.rmtree(drop_loc)
 
     @staticmethod
     def make_filename(
