@@ -38,17 +38,21 @@
     <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
     <a href="{{ url_for('share_drop', drop_id=selected.name) }}"><button>Share</button></a>
     <a href="{{ url_for('add_file', drop_id=selected.name) }}"><button>Add File</button></a>
-    <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
-    <a href="{{ url_for('view_pending_changes', drop_id=selected.name) }}"><button>Pending Changes</button></a>
     <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>
     <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete Drop</button></a>
+    <!--
+    <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
+    <a href="{{ url_for('view_pending_changes', drop_id=selected.name) }}"><button>Pending Changes</button></a>
     <a href="{{ url_for('view_conflicts', drop_id=selected.name) }}"><button>Conflicts</button></a>
+    -->
   </div>
 {% elif selected and selected.permission == "subscribed" %}
   <div class="btn-group">
       <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
       <a href="{{ url_for('unsubscribe', drop_id=selected.name) }}"><button>Unsubscribe</button></a>
+      <!--
       <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
+      -->
   </div>
 {% endif %}
 {% endblock %}
@@ -94,6 +98,17 @@
       </select>
       <input class=file-action-button type='submit' value='Transfer' />
     </form>
+{% elif selected and selec_act == "share drop" %}
+  <center>
+    <p>
+      <strong>
+        To share, send the following Drop ID to your friends: {{ selected.name | safe }}
+      </strong>
+      <br><br>
+      Please note, 5yncr does not provide any functionality to send this ID to others. <br>
+      This must be done via email, word-of-mouth, messaging software, etc. <br>
+    </p>
+  </center>
 {% elif selected and selec_act == "current conflicts" %}
     Current conflicts of drop {{ selected.name|safe }}:
     <table class=file-table>

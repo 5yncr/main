@@ -83,6 +83,9 @@ h2 {
 div.text-indent {
     text-indent: 50px;
 }
+div.middle-text {
+    text-align: center;
+}
 .drop-list {
     vertical-align:top;
     display:inline-block;
