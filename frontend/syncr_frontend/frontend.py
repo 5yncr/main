@@ -4,11 +4,12 @@ from os import path
 from tkinter import filedialog
 from tkinter import Tk
 
-import communication
 from flask import flash
 from flask import Flask
 from flask import render_template
 from flask import request
+
+from .communication import send_request
 
 app = Flask(__name__)  # create the application instance
 app.config.from_object(__name__)  # load config from this file , frontend.py
@@ -37,7 +38,7 @@ def send_message(message):
     :return: response from server
     """
 
-    response = communication.send_message(message)
+    response = send_request(message)
 
     """
     # The following 'response' is being left in for testing purposes.
@@ -800,6 +801,28 @@ def submit_changes(drop_id):
     )
 
 
+@app.route('/new_version/<drop_id>')
+def new_version(drop_id):
+    """
+    Tells backend to create new version from
+    changed files for specified drop
+    :param drop_id: drop to create new version for
+    :return: renders web page based off backend response
+    """
+
+    message = {
+        'action': 'new_version',
+        'drop_id': drop_id,
+    }
+
+    response = send_message(message)
+
+    return show_drops(
+        response.get('drop_id'),
+        response.get('message'),
+    )
+
+
 @app.route('/')
 def startup():
     return show_drops(None, None)
@@ -818,6 +841,7 @@ def show_drops(drop_id=None, message=None):
     owned_drops = get_owned_drops()
     subscribed_drops = get_subscribed_drops()
     selected_drop = []
+    new_ver = None
 
     file_versions = get_file_versions(
         '',
@@ -828,6 +852,12 @@ def show_drops(drop_id=None, message=None):
         # TODO: Remove when sockets are setup
         selected_drop['name'] = drop_id
         selected_drop['permission'] = get_permission(drop_id)
+
+        # Check if new version can be created
+        version_update = selected_drop.get('new_version')
+        if version_update and get_permission(drop_id) == 'owned':
+            new_ver = True
+            flash('NEW VERSION can be made. Select NEW VERSION.')
 
     performed_action = []  # REMOVE WHEN BACKEND COMMUNICATION IS ADDED
 
@@ -850,6 +880,7 @@ def show_drops(drop_id=None, message=None):
             action=performed_action,
             selec_act=curr_action,
             versions=file_versions,
+            new_version=new_ver,
         )
     else:
         return {

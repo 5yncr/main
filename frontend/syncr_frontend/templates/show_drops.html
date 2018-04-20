@@ -36,6 +36,9 @@
 {% if selected and selected.permission == "owned" %}
   <div class="btn-group">
     <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
+    {% if new_version %}
+    <a href="{{ url_for('new_version', drop_id=selected.name) }}"><button>New Version</button></a>
+    {% endif %}
     <a href="{{ url_for('share_drop', drop_id=selected.name) }}"><button>Share</button></a>
     <a href="{{ url_for('add_file', drop_id=selected.name) }}"><button>Add File</button></a>
     <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>

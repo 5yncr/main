@@ -2,21 +2,22 @@ import platform
 import socket
 
 import bencode
-from constants import BUFFER_SIZE
-from constants import TCP_ADDRESS
-from constants import TIMEOUT
-from constants import UNIX_ADDRESS
+
+from .constants import BUFFER_SIZE
+from .constants import TCP_ADDRESS
+from .constants import TIMEOUT
+from .constants import UNIX_ADDRESS
 
 
-def send_message(msg):
+def send_request(request):
     """
     Sends message to backend over socket connection and waits for a response
-    :param msg: dictionary of info to be sent to backend
+    :param request: dictionary of info to be sent to backend
     :return:
     """
 
     # Convert dictionary to send-able type
-    data_string = bencode.encode(msg)
+    data_string = bencode.encode(request)
 
     op_sys = platform.system()
     if op_sys == 'Windows':
@@ -86,9 +87,9 @@ def _unix_send_message(msg):
 
 
 if __name__ == '__main__':
-    request = {
+    message = {
         'drop_id': 'test',
         'action': 'ACTION_SHARE_DROP',
     }
-    respond = send_message(request)
+    respond = send_request(message)
     print(respond.get('status'))
