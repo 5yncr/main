@@ -1,3 +1,7 @@
+# 20/04/2018
+      backend: Implement DHT functionality (#59)
+      backend: Implement drop peer timeouts (#64)
+
 # 13/04/2018
       notes: This week researched and worked on the DHT.  It ran into some
       unexpected issues, and is currently not ready for merging, but is

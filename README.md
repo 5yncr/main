@@ -1,3 +1,8 @@
+# 20/04/2018
+      The project works for the most part, we just need to do some work to
+      glue together the backend and frontend
+
+
 # 13/04/2018
       This week was a bit chaotic, and we have a lot of unmerged chnages that
       should go out next week.  A lot of work that was done isn't seen in these

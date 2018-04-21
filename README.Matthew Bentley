@@ -1,3 +1,9 @@
+# 20/04/2018
+      backend: Re-write large portions of code to use asyncio
+      backend: Make update_drop work and add update drop script
+      backend: Re-work run_backend to work better with python asyncio
+      tracker: Fix async stuff
+
 # 13/04/2018
       backend: Cache loggers to make log output more readable
       backend: Fix file writing and enable download resuming

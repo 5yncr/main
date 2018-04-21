@@ -1,3 +1,8 @@
+# 20/04/2018
+      backend: Test handle_frontend functions and implement backend functionality for subscribing / unsubscribing from drop, and sharing drop info (#62)
+      frontend: Clean UI to remove outdated functionalities. Get functionality working for share drop button (#18)
+      notes: This week, I focused on cleaning up the frontend, as it had buttons that were no longer in the scope of our remaining schedule. I also worked a bit on the backend, implementing an initial test suite for the handle_frontend.py file. I was having issues with testing async functions, to the point where none of my test cases passed (I’m certain that, at the very least, the tests were failing due to the test formatting). Since I need to focus on a project for another class, I’ve decided to comment out the suite for the time being, allowing me to read more on the documentation this upcoming week.
+
 # 13/04/2018
       backend: Create backend functionality for create drop functionality and recognize added and removed files (#55)
       frontend: Implement create drop functionality, including web page instructions and buttons (#15)

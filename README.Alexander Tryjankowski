@@ -1,3 +1,7 @@
+# 20/04/2018
+      frontend: Create hook for frontend tests to remove gui dependency (#16)
+      frontend: Add versioning notification and button to frontend to allow users to create new version of drop after changes have been made to files (#17)
+
 # 13/04/2018
       backend: Implement functionality for add/remove owners and get owned/subscribed/selected drops in backend & Convert drop_metadata objects to frontend dictionaries (#57)
 
