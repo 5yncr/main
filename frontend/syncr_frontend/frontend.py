@@ -170,12 +170,12 @@ def get_selected_drop(drop_id):
 
     response = send_message(message)
 
-    drop_list = response.get('requested_drops')
+    drop = response.get('requested_drops')
 
-    if drop_list is None:
+    if drop is None:
         return None
     else:
-        return drop_list[0]
+        return drop
 
 
 @app.route('/get_conflicting_files/<drop_id>')
@@ -849,9 +849,6 @@ def show_drops(drop_id=None, message=None):
 
     if drop_id is not None:
         selected_drop = get_selected_drop(drop_id)
-        # TODO: Remove when sockets are setup
-        selected_drop['name'] = drop_id
-        selected_drop['permission'] = get_permission(drop_id)
 
         # Check if new version can be created
         version_update = selected_drop.get('new_version')

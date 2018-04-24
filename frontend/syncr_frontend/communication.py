@@ -1,12 +1,14 @@
+import os
 import platform
 import socket
 
 import bencode
+from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
+from syncr_backend.init.node_init import get_full_init_directory
 
 from .constants import BUFFER_SIZE
 from .constants import TCP_ADDRESS
 from .constants import TIMEOUT
-from .constants import UNIX_ADDRESS
 
 
 def send_request(request):
@@ -67,7 +69,7 @@ def _unix_send_message(msg):
 
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(TIMEOUT)
-    s.connect(UNIX_ADDRESS)
+    s.connect(os.path.join(get_full_init_directory(), FRONTEND_UNIX_ADDRESS))
 
     # Send request
     s.sendall(msg)
