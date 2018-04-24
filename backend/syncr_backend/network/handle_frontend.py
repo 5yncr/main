@@ -34,16 +34,21 @@ from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
 from syncr_backend.init.drop_init import initialize_drop
+from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
+from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
 from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
-from syncr_backend.util.drop_util import simple_get_drop_metadata
 from syncr_backend.util.drop_util import sync_drop
 from syncr_backend.util.drop_util import update_drop
+from syncr_backend.util.log_util import get_logger
 from syncr_backend.util.network_util import send_response
+
+
+logger = get_logger(__name__)
 
 
 async def handle_frontend_request(
@@ -141,11 +146,10 @@ async def handle_transfer_ownership(
         }
     else:
         # TODO: backend logic to apply ownership transfer.
-        new_owner = request['transfer_owner_id']
         response = {
             'status': 'ok',
             'result': 'success',
-            'message': 'Primary Ownership transferred to ' + new_owner,
+            'message': 'Primary Ownership transferred to ' + 'foo',
         }
 
     await send_response(conn, response)
@@ -252,15 +256,17 @@ async def handle_add_owner(
             'result': 'success',
             'message': 'owner successfully added',
         }
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        owner_id = crypto_util.b64decode(request['owner_id'])
 
         update_drop(
-            request['drop_id'],
-            add_secondary_owner=request['owner_id'],
+            drop_id,
+            add_secondary_owner=owner_id,
         )
 
-        md = await simple_get_drop_metadata(request['drop_id'])
+        md = await get_drop_metadata(drop_id, [])
 
-        if request['owner_id'] not in md.other_owners:
+        if owner_id not in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to add owner to drop'
 
@@ -348,13 +354,14 @@ async def handle_delete_drop(
             'error': ERR_INVINPUT,
         }
     else:
-        file_location = await get_drop_location(request['drop_id'])
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        file_location = await get_drop_location(drop_id)
         file_location = os.path.join(
             file_location,
             DEFAULT_DROP_METADATA_LOCATION,
         )
         drop_metadata = await DropMetadata.read_file(
-            id=request['drop_id'],
+            id=drop_id,
             metadata_location=file_location,
         )
         if drop_metadata is None:
@@ -452,7 +459,8 @@ async def handle_get_selected_drops(
             'error': ERR_INVINPUT,
         }
     else:
-        md = await simple_get_drop_metadata(request['drop_id'])
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        md = await get_drop_metadata(drop_id, [])
         drop = drop_metadata_to_response(md)
 
         response = {
@@ -614,6 +622,7 @@ async def handle_remove_file(
             'error': ERR_INVINPUT,
         }
     else:
+        drop_id = crypto_util.b64decode(request['drop_id'])
         response = {
             'status': 'ok',
             'result': 'success',
@@ -621,12 +630,12 @@ async def handle_remove_file(
         }
 
         update_drop(
-            request['drop_id'],
+            drop_id,
             remove_file=os.path.basename(request['file_path']),
         )
 
-        peers = await get_drop_peers(request['drop_id'])
-        meta = await get_drop_metadata(request['drop_id'], peers)
+        peers = await get_drop_peers(drop_id)
+        meta = await get_drop_metadata(drop_id, peers)
 
         if os.path.basename(request['file_path']) in meta.files:
             response = {
@@ -660,6 +669,8 @@ async def handle_remove_owner(
             'error': ERR_INVINPUT,
         }
     else:
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        owner_id = crypto_util.b64decode(request['owner_id'])
         response = {
             'status': 'ok',
             'result': 'success',
@@ -667,13 +678,13 @@ async def handle_remove_owner(
         }
 
         await update_drop(
-            request['drop_id'],
-            remove_secondary_owner=request['owner_id'],
+            drop_id,
+            remove_secondary_owner=owner_id,
         )
 
-        md = await simple_get_drop_metadata(request['drop_id'])
+        md = await get_drop_metadata(drop_id, [])
 
-        if request['owner_id'] in md.other_owners:
+        if owner_id in md.other_owners:
             response['result'] = 'failure'
             response['message'] = 'unable to remove owner from drop'
 
@@ -760,12 +771,13 @@ async def handle_unsubscribe(
             'error': ERR_INVINPUT,
         }
     else:
-        file_location = await get_drop_location(request['drop_id'])
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        file_location = await get_drop_location(drop_id)
         file_location = os.path.join(
             file_location, DEFAULT_DROP_METADATA_LOCATION,
         )
         drop_metadata = await DropMetadata.read_file(
-            id=request['drop_id'],
+            id=drop_id,
             metadata_location=file_location,
         )
         if drop_metadata is None:
@@ -852,15 +864,14 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     :return: Dictionary for frontend
     """
     response = {
-        'drop_id': md.id,
+        'drop_id': crypto_util.b64encode(md.id),
         'name': md.name,
-        'version': md.version,
-        'previous_versions': md.previous_versions,
-        'primary_owner': md.owner,
-        'other_owners': md.other_owners,
-        'signed_by': md.signed_by,
+        'version': "%s" % md.version,
+        'previous_versions': ["%s" % v for v in md.previous_versions],
+        'primary_owner': crypto_util.b64encode(md.owner),
+        'other_owners': [crypto_util.b64encode(o) for o in md.other_owners],
+        'signed_by': crypto_util.b64encode(md.signed_by),
         'files': md.files,
-        'sig': md.sig,
     }
 
     return response
@@ -914,13 +925,17 @@ async def _unix_handle_request() -> asyncio.events.AbstractServer:
     """
 
     try:
-        os.unlink(FRONTEND_UNIX_ADDRESS)
+        os.unlink(
+            os.path.join(get_full_init_directory(), FRONTEND_UNIX_ADDRESS),
+        )
     except OSError:
         # does not yet exist, do nothing
         pass
 
     return await asyncio.start_unix_server(
-        async_handle_request, path=FRONTEND_UNIX_ADDRESS,
+        async_handle_request, path=os.path.join(
+            get_full_init_directory(), FRONTEND_UNIX_ADDRESS,
+        ),
     )
 
 

@@ -86,4 +86,4 @@ ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
 
 # Frontend connection settings
 FRONTEND_TCP_ADDRESS = ('localhost', 12345)
-FRONTEND_UNIX_ADDRESS = './unix_socket'
+FRONTEND_UNIX_ADDRESS = "unix_socket"

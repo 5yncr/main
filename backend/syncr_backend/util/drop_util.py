@@ -246,6 +246,8 @@ async def get_drop_metadata(
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
+        if not peers:
+            peers = await get_drop_peers(drop_id)
         args = {
             'drop_id': drop_id,
             'drop_version': version,
@@ -322,18 +324,6 @@ async def verify_version(
                 raise VerificationException()
 
 
-async def simple_get_drop_metadata(drop_id: bytes) -> DropMetadata:
-    """
-    Get drop_metadata object from just drop_id
-    :param drop_id:
-    :return: A drop_metadata object
-    """
-    peers = await get_drop_peers(drop_id)
-    drop_metadata = await get_drop_metadata(drop_id, peers)
-
-    return drop_metadata
-
-
 async def get_owned_drops_metadata() -> List[DropMetadata]:
     """
     Get list of metadata objects for owned drops (primary and secondary)
@@ -349,7 +339,7 @@ async def get_owned_drops_metadata() -> List[DropMetadata]:
 
     for drop_id in drops:
         # Get drop_metadata object for drop
-        md = await simple_get_drop_metadata(drop_id)
+        md = await get_drop_metadata(drop_id, [])
         if md.owner == node_id:
             owned_drops.append(md)
         else:
@@ -376,7 +366,7 @@ async def get_subscribed_drops_metadata() -> List[DropMetadata]:
     # Subscribed drops are those on the disk that this node does not own
     for drop_id in drops:
         # Get drop_metadata object for drop
-        md = await simple_get_drop_metadata(drop_id)
+        md = await get_drop_metadata(drop_id, [])
         if md.owner != node_id and node_id not in md.other_owners:
             subscribed_drops.append(md)
 
