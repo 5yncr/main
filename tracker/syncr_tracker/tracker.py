@@ -260,9 +260,7 @@ def request_post_drop_id(conn, request):
         )
         return
     request['data'].append(datetime.datetime.now())
-    drop_availability[request['drop_id']].append(
-        request['data'],
-    )
+    add_to_drop_availability(request['drop_id'], request['data'])
     print(
         'Drop Availability Updated - ', request['drop_id'],
         '\n\tNode: ', request['data'][TRACKER_DROP_NODE_INDEX],
@@ -270,6 +268,19 @@ def request_post_drop_id(conn, request):
         '\n\tPort: ', request['data'][TRACKER_DROP_PORT_INDEX],
     )
     send_server_response(conn, TRACKER_OK_RESULT, 'Drop availability updated')
+
+
+def add_to_drop_availability(drop_id, data):
+    for entry in drop_availability[drop_id]:
+        if entry[TRACKER_DROP_NODE_INDEX] == data[TRACKER_DROP_NODE_INDEX] \
+                and entry[TRACKER_DROP_IP_INDEX] == \
+                data[TRACKER_DROP_IP_INDEX] \
+                and entry[TRACKER_DROP_PORT_INDEX] == \
+                data[TRACKER_DROP_PORT_INDEX]:
+            drop_availability[drop_id].remove(entry)
+            drop_availability[drop_id].append(data)
+            return
+    drop_availability[drop_id].append(data)
 
 
 def generate_node_key_file_name(node_id):
