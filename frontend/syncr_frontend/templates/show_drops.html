@@ -198,24 +198,10 @@
 {% elif selected %}
     Name is {{ selected.name|safe }}. {{ action.description|safe }}
     <table class=file-table>
-    {% for file in selected.files %}
+    {% for name, percent in selected.files.items() %}
         <tr class=file-info-row>
-            <th class=file-name>{{ file|safe }}</th>
-            <th class=file-actions>
-              <div class=file-action-container>
-                <div class=file-action-button-container>
-                  <form class=file-action-button name='open_file' action = '' method = 'post'>
-                    <input type="hidden" name="type" value="open_file">
-                    <input class=file-action-button type='submit' name='open_file' value='open' />
-                  </form>
-                </div>
-                <div class=file-action-button-container>
-                    <form method="GET" action="{{ url_for('remove_file', drop_id=selected.name, file_name=file) }}">
-                        <input class=file-action-button type='submit' value='remove' />
-                    </form>
-                </div>
-              </div>
-            </th>
+            <th class=file-name>{{ name|safe }}</th>
+            <th class=file-percent>{{ percent|safe }}%</th>
         </tr>
     {% endfor %}
     </table>
