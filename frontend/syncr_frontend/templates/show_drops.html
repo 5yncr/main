@@ -4,20 +4,24 @@
 <div >
     <h1 class=drop-type>Owned Drops</h1>
     <ul class=drops>
+        {% if owned %}
         {% for drop in owned %}
             <li><a href="{{ url_for('show_drops', drop_id=drop.drop_id) }}"><h2 class=drop-name>{{ drop.name|safe }}</h2></a>
         {% else %}
             <li><em>None</em>
         {% endfor %}
+        {% endif %}
     </ul>
 
     <h1 class=drop-type>Subscribed Drops</h1>
     <ul class=drops>
+        {% if drop %}
         {% for drop in subscribed %}
             <li><a href="{{ url_for('show_drops', drop_id=drop.drop_id) }}"><h2 class=drop-name>{{ drop.name|safe }}</h2></a>
         {% else %}
             <li><em>None</em>
         {% endfor %}
+        {% endif %}
     </ul>
 </div>
 {% endblock %}
@@ -230,7 +234,7 @@
       <div class=file-action-container>
         <div class=file-action-button-container>
           <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
-            Drop to Subscribe to: <input type='text' name='drop_to_subscribe_to' />
+            Drop to Subscribe to: <input type='text' id='drop_to_subscribe_to' name='drop_to_subscribe_to' />
             <input class=file-action-button type='submit' value='Subscribe'/>
           </form>
         </div>

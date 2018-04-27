@@ -22,10 +22,24 @@ def send_request(request):
     data_string = bencode.encode(request)
 
     op_sys = platform.system()
-    if op_sys == 'Windows':
-        response_string = _tcp_send_message(data_string)
-    else:
-        response_string = _unix_send_message(data_string)
+
+    try:
+        if op_sys == 'Windows':
+            response_string = _tcp_send_message(data_string)
+        else:
+            response_string = _unix_send_message(data_string)
+    except socket.timeout:
+        response = {
+            'status': 'error',
+            'message': 'Connection Timeout. Check Backend Status',
+        }
+        return response
+    except socket.error:
+        response = {
+            'status': 'error',
+            'message': 'Backend Communication Error',
+        }
+        return response
 
     response = bencode.decode(response_string)
 

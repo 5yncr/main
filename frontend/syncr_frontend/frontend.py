@@ -389,7 +389,6 @@ def input_drop_to_subscribe(drop_code=None):
     }
 
     response = send_message(message)
-
     return show_drops(
         None,
         response.get('message'),
@@ -826,11 +825,12 @@ def show_drops(drop_id=None, message=None, current_path=None):
     if drop_id is not None:
         selected_drop = get_selected_drop(drop_id)
 
-        # Check if new version can be created
-        version_update = selected_drop.get('new_version')
-        if version_update and get_permission(drop_id) == 'owned':
-            new_ver = True
-            flash('NEW VERSION can be made. Select NEW VERSION.')
+        if selected_drop is not None:
+            # Check if new version can be created
+            version_update = selected_drop.get('new_version')
+            if version_update and get_permission(drop_id) == 'owned':
+                new_ver = True
+                flash('NEW VERSION can be made. Select NEW VERSION.')
 
     performed_action = []  # REMOVE WHEN BACKEND COMMUNICATION IS ADDED
 
