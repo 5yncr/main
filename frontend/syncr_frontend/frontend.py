@@ -2,8 +2,6 @@ import platform
 import subprocess
 from os import path
 from os import scandir
-from tkinter import filedialog
-from tkinter import Tk
 
 from flask import flash
 from flask import Flask
@@ -24,7 +22,7 @@ app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 
 # Global Variables
 curr_action = ''
-change_list = []
+current_drop_path = ''
 testing = False
 home_path = path.expanduser('~')[1:]
 
@@ -40,51 +38,6 @@ def send_message(message):
     """
 
     response = send_request(message)
-
-    """
-    # The following 'response' is being left in for testing purposes.
-    # It was the previous version that we used to run the GUI.
-    # When communication is set up, this section will be deleted.
-
-    response = {
-        'change_list': message.get('change_list'),
-        'drop_id': message.get('drop_id'),
-        'drop_name': message.get('drop_name'),
-        'file_name': message.get('file_name'),
-        'file_path': message.get('file_path'),
-        'action': message.get('action'),
-        'message': "Generic Message For " + message.get('action'),
-        'success': True,
-        'requested_drops': (
-            {
-                'drop_id': 'o1',
-                'name': 'O_Drop_1',
-                'version': None,
-                'previous_versions': [],
-                'primary_owner': 'p_owner_id',
-                'other_owners': ["owner1", "owner2"],
-                'signed_by': 'owner_id',
-                'files': [
-                    {'name': 'FileOne'},
-                    {'name': 'FileTwo'},
-                    {'name': 'FileThree'},
-                    {'name': 'FileFour'},
-                    {'name': 'Folder'},
-                ],
-            },
-            {
-                'drop_id': 'o2',
-                'name': 'O_Drop_2',
-                'version': None,
-                'previous_versions': [],
-                'primary_owner': 'owner_id',
-                'other_owners': [],
-                'signed_by': 'owner_id',
-                'files': [],
-            },
-        ),
-    }
-    """
 
     return response
 
@@ -107,55 +60,18 @@ def open_file_location(file_path):
         subprocess.Popen(['open', file_path])
 
 
-@app.route('/remove_file/<drop_id>/<file_name>')
-def remove_file(drop_id, file_name):
+def get_owned_subscribed_drops():
     """
-    Removes file at specified location from drop info
-    :param drop_id: id of drop where file is located
-    :param file_name: name of removed file
-    :return: backend and ui removes file instance
-    """
-    set_curr_action('remove file')
-
-    message = {
-        'drop_id': drop_id,
-        'file_name': file_name,
-        'action': 'remove_file',
-    }
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-# Return list of owned drop dictionaries
-def get_owned_drops():
-    """
-    :return: Gets a list of own drop dictionaries
+    :return: Gets a tuple of of dictionaries in format
+    (owned drop dict, subscribed drop dict)
     """
     message = {
-        'action': 'get_owned_drops',
+        'action': 'get_owned_subscribed_drops',
     }
 
     response = send_message(message)
 
-    return response.get('requested_drops')
-
-
-# Return list of subscribed drop dictionaries
-def get_subscribed_drops():
-    """
-    :return: Gets a list of subscribed drop dictionaries
-    """
-    message = {
-        'action': 'get_subscribed_drops',
-    }
-
-    response = send_message(message)
-
-    return response.get('requested_drops')
+    return response.get('requested_drops_tuple')
 
 
 # Return dictionary for selected drop
@@ -179,41 +95,20 @@ def get_selected_drop(drop_id):
         return drop
 
 
-@app.route('/get_conflicting_files/<drop_id>')
-def get_conflicting_files(drop_id):
+def is_in_drop_list(drop_id, drop_list):
     """
-    Retrieves conflicting files from a drop.
-    :param drop_id: ID of drop with conflicting files.
-    :return: list of conflicting files
+    :param drop_id: ID of the drop.
+    :param drop_list: List of drops
+    :return: Returns True if the given drop_id exists in the drop list.
     """
-    set_curr_action('get conflicting files')
 
-    message = {
-        'drop_id': drop_id,
-        'action':  'get_conflicting_files',
-    }
+    in_list = False
 
-    response = send_message(message)
+    for drop in drop_list:
+        if drop.get('drop_id') == drop_id:
+            in_list = True
 
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-def get_permission(drop_id):
-    """
-    Returns the permission type of the drop ID.
-    :param drop_id: The ID of a given drop.
-    :return: The permission type of the drop.
-    """
-    owned_drops = get_owned_drops()
-
-    for drop in owned_drops:
-        if drop['name'] == drop_id:
-            return "owned"
-
-    return "subscribed"
+    return in_list
 
 
 def get_drop_id(file_path):
@@ -266,24 +161,6 @@ def set_curr_action(action_update):
     curr_action = action_update
 
 
-def get_file_versions(file_path):
-    """
-    Retrieves available versions of a file
-    :param file_path: Path of conflicted file
-    :return: list of versions for particular file
-    """
-    # TODO: link with backend to retrieve file version info.
-
-    return {
-        'versions': [
-            {'name': 'Version 1', 'timestamp': 'ts1', 'owner': 'o1'},
-            {'name': 'Version 2', 'timestamp': 'ts2', 'owner': 'o2'},
-            {'name': 'Version 3', 'timestamp': 'ts3', 'owner': 'o3'},
-            {'name': 'Version 4', 'timestamp': 'ts4', 'owner': 'o4'},
-        ],
-    }
-
-
 @app.route('/create_drop/<path:current_path>')
 def create_drop(current_path):
     """
@@ -313,30 +190,6 @@ def subscribe_to_drop():
     return show_drops(
         None,
         None,
-    )
-
-
-@app.route('/transfer_ownership', methods=['POST'])
-def transfer_ownership():
-    """
-    After selecting an owner, ownership is
-    transferred from primary owner to selected owner.
-    This functionality is only available to the primary owner.
-    :return: Message sent to backend
-    """
-
-    result = request.form.get('transfer_id')
-
-    message = {
-        'action': 'transfer_ownership',
-        'transfer_owner_id': result,
-    }
-
-    response = send_message(message)
-
-    return show_drops(
-        None,
-        response.get('message'),
     )
 
 
@@ -395,151 +248,6 @@ def input_drop_to_subscribe(drop_code=None):
     )
 
 
-@app.route('/decline_conflict_file/<file_path>')
-def decline_conflict_file(file_path):
-    """
-    Sends 'decline conflict file' command to backend
-    :param file_path: path of the declined file
-    :return: message sent back to frontend
-    """
-
-    message = {
-        'drop_id': get_drop_id(file_path),
-        'file_path': file_path,
-        'action': 'decline_conflict_file',
-    }
-
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-@app.route('/accept_conflict_file/<file_path>')
-def accept_conflict_file(file_path):
-    """
-    Sends 'accept conflict file' command to backend
-    :param file_path: path of the accepted file
-    :return: message sent back to frontend
-    """
-
-    message = {
-        'drop_id': get_drop_id(file_path),
-        'file_path': file_path,
-        'action': 'accept_conflict_file',
-    }
-
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-@app.route('/accept_changes/<file_path>')
-def accept_changes(file_path):
-    """
-    Sends 'accept changes' command to backend
-    :param file_path: path of file with accepted changes
-    :return: message sent back to frontend
-    """
-
-    message = {
-        'drop_id': get_drop_id(file_path),
-        'file_path': file_path,
-        'action': 'accept_changes',
-    }
-
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-@app.route('/decline_changes/<file_path>')
-def decline_changes(file_path):
-    """
-    Sends 'decline changes' command to backend
-    :param file_path: path of file with declined changes
-    :return: message sent back to frontend
-    """
-
-    message = {
-        'drop_id': get_drop_id(file_path),
-        'file_path': file_path,
-        'action': 'decline_changes',
-    }
-
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-@app.route('/view_conflicts/<drop_id>')
-def view_conflicts(drop_id):
-    """
-    Sends 'view conflicts' command to backend
-    :param drop_id: name of drop with possible conflicts
-    :return: list of conflicted files sent to frontend
-    """
-
-    set_curr_action('current conflicts')
-
-    message = {
-        'drop_id': drop_id,
-        'action':  'view_conflicts',
-    }
-
-    response = send_message(message)
-
-    # TODO: Get global variable setup for selected button (HTML)
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
-@app.route('/add_file/<drop_id>')
-def add_file(drop_id):
-    """
-    Sends 'add file' message to backend
-    :param drop_id: ID of drop where file is added
-    :return: Prompt to add a file
-    """
-
-    set_curr_action('add file')
-
-    root = Tk()
-    root.filename = filedialog.askopenfilename(
-        initialdir="/", title="Select file",
-        filetypes=[("all files", "*.*")],
-    )
-
-    file_path = root.filename
-    root.destroy()
-
-    if file_path is None:
-        result = None
-    else:
-        message = {
-            'drop_id': drop_id,
-            'action': 'add_file',
-            'file_path': file_path,
-        }
-        response = send_message(message)
-        result = response.get('message')
-
-    return show_drops(drop_id, result)
-
-
 @app.route('/share_drop/<drop_id>')
 def share_drop(drop_id):
     """
@@ -558,30 +266,6 @@ def share_drop(drop_id):
     # TODO: remove drop_id after socket setup
     result = response.get('message')
     return show_drops(drop_id, result)
-
-
-@app.route('/view_pending_changes/<drop_id>')
-def view_pending_changes(drop_id):
-    """
-    Sends 'view pending changes' command to backend
-    :param drop_id: name of drop with pending changes
-    :return: list of files in drop with proposed changes
-    """
-
-    set_curr_action('view pending changes')
-
-    message = {
-        'drop_id': drop_id,
-        'action': 'view_pending_changes',
-    }
-
-    # TODO: Setup communication to retrieve files with changes.
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
 
 
 @app.route('/view_owners/<drop_id>/add/', methods=['GET', 'POST'])
@@ -707,74 +391,6 @@ def unsubscribe(drop_id):
         return show_drops(drop_id, result)
 
 
-# Request a change to the selected drop
-@app.route('/request_change/<drop_id>')
-def request_change(drop_id):
-    """
-    Communicate with backend to request change
-    :param drop_id: ID of drop with changes
-    :return: UI and backend update with proposed change
-    """
-
-    set_curr_action('request_change')
-
-    message = {
-        'drop_id': drop_id,
-        'action': 'request_change',
-    }
-    response = send_message(message)
-    result = response.get('message')
-    return show_drops(drop_id, result)
-
-
-@app.route('/remove_change/<file_path>')
-def remove_change(file_path):
-    """
-    Removes a file from the list of requested changes.
-    :param file_path: Path of file that is to be removed.
-    :return: Updated change list without said file.
-    """
-    if file_path in change_list:
-        change_list.remove(file_path)
-
-
-@app.route('/upload_file')
-def upload_file():
-    """
-    Gives users a prompt to upload a file to list of
-    potential changes.
-    :return: Updated UI and list including file as
-    a potential change to master.
-    """
-
-    # TODO: Setup finder system to select a file to upload.
-
-    pass
-
-
-@app.route('/submit_changes/<drop_id>')
-def submit_changes(drop_id):
-    """
-    Communicate with backend to submit requested changes.
-    :return: Backend now contains a list of proposed changes
-    for primary / secondary owners to consider.
-    """
-
-    message = {
-        'action': 'submit_changes',
-        'drop_id': drop_id,
-        'change_list': change_list,
-    }
-
-    # TODO: Setup backend to track this change list.
-    response = send_message(message)
-
-    return show_drops(
-        response.get('drop_id'),
-        response.get('message'),
-    )
-
-
 @app.route('/new_version/<drop_id>')
 def new_version(drop_id):
     """
@@ -813,22 +429,27 @@ def show_drops(drop_id=None, message=None, current_path=None):
     """
     global testing
 
-    owned_drops = get_owned_drops()
-    subscribed_drops = get_subscribed_drops()
+    drop_tups = get_owned_subscribed_drops()
+    owned_drops = drop_tups[0]
+    subscribed_drops = drop_tups[1]
+
     selected_drop = []
     new_ver = None
-
-    file_versions = get_file_versions(
-        '',
-    )['versions']  # REMOVE WHEN BACKEND IS ADDED
+    permission = None
 
     if drop_id is not None:
-        selected_drop = get_selected_drop(drop_id)
 
+        selected_drop = get_selected_drop(drop_id)
         if selected_drop is not None:
+
+            if is_in_drop_list(drop_id, owned_drops):
+                permission = "owned"
+            else:
+                permission = "subscribed"
+
             # Check if new version can be created
             version_update = selected_drop.get('new_version')
-            if version_update and get_permission(drop_id) == 'owned':
+            if version_update and is_in_drop_list(drop_id, owned_drops):
                 new_ver = True
                 flash('NEW VERSION can be made. Select NEW VERSION.')
 
@@ -866,8 +487,8 @@ def show_drops(drop_id=None, message=None, current_path=None):
             owned=owned_drops,
             action=performed_action,
             selec_act=curr_action,
-            versions=file_versions,
             new_version=new_ver,
+            permission=permission,
             directory=current_path,
             directory_folders=folders,
         )
@@ -878,7 +499,8 @@ def show_drops(drop_id=None, message=None, current_path=None):
             'owned_drops': owned_drops,
             'performed_action': performed_action,
             'curr_action': curr_action,
-            'version': file_versions,
+            'new_version': new_ver,
+            'permission': permission,
         }
 
 
@@ -905,14 +527,8 @@ class FrontendHook:
     def send_message(self, message):
         return send_message(message=message)
 
-    def remove_file(self, drop_id, file_name):
-        self.update_hook(remove_file(drop_id=drop_id, file_name=file_name))
-
-    def get_owned_drops(self):
-        return get_owned_drops()
-
-    def get_subscribed_drops(self):
-        return get_subscribed_drops()
+    def get_owned_subscribed_drops(self):
+        return get_owned_subscribed_drops()
 
     def get_selected_drop(self, drop_id):
         return get_selected_drop(drop_id=drop_id)

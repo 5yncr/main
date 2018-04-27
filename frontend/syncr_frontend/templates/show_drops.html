@@ -26,8 +26,6 @@
 </div>
 {% endblock %}
 
-<!--test-->
-
 {% block drop_creation %}
 <div class="btn-group">
   <a href="{{ url_for('create_drop', current_path=directory) }}"><button>Create Drop</button></a>
@@ -37,29 +35,20 @@
 
 
 {% block toolbar %}
-{% if selected and selected.permission == "owned" %}
+{% if selected and permission == "owned" %}
   <div class="btn-group">
     <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
     {% if new_version %}
     <a href="{{ url_for('new_version', drop_id=selected.name) }}"><button>New Version</button></a>
     {% endif %}
     <a href="{{ url_for('share_drop', drop_id=selected.name) }}"><button>Share</button></a>
-    <a href="{{ url_for('add_file', drop_id=selected.name) }}"><button>Add File</button></a>
     <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>
     <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete Drop</button></a>
-    <!--
-    <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
-    <a href="{{ url_for('view_pending_changes', drop_id=selected.name) }}"><button>Pending Changes</button></a>
-    <a href="{{ url_for('view_conflicts', drop_id=selected.name) }}"><button>Conflicts</button></a>
-    -->
   </div>
-{% elif selected and selected.permission == "subscribed" %}
+{% elif selected and permission == "subscribed" %}
   <div class="btn-group">
       <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
       <a href="{{ url_for('unsubscribe', drop_id=selected.name) }}"><button>Unsubscribe</button></a>
-      <!--
-      <a href="{{ url_for('request_change', drop_id=selected.name) }}"><button>Request Change</button></a>
-      -->
   </div>
 {% endif %}
 {% endblock %}
@@ -96,152 +85,60 @@
         Owner ID: <input type='text' name='owner_id' />
         <input class=file-action-button type='submit' value='Add Owner' />
     </form>
-    <form method="POST" action="{{ url_for('transfer_ownership') }}">
-      Transfer Ownership to:
-      <select>
-        {% for owner in selected.other_owners %}
-          <option value={{owner}}>{{owner}}</option>
-        {% endfor %}
-      </select>
-      <input class=file-action-button type='submit' value='Transfer' />
-    </form>
 {% elif selected and selec_act == "share drop" %}
   <center>
     <p>
       <strong>
-        To share, send the following Drop ID to your friends: {{ selected.name | safe }}
+        To share, send the following Drop ID to your friends: {{ selected.drop_id | safe }}
       </strong>
       <br><br>
       Please note, 5yncr does not provide any functionality to send this ID to others. <br>
       This must be done via email, word-of-mouth, messaging software, etc. <br>
     </p>
   </center>
-{% elif selected and selec_act == "current conflicts" %}
-    Current conflicts of drop {{ selected.name|safe }}:
-    <table class=file-table>
-    {% for file in selected.files %}
-      <tr class=file-info-row>
-        <th class=file-name>{{ file.name|safe }}</th>
-        <th class=file-actions>
-          <div class=file-action-container>
-            {% if file.occr == "many" %}
-              <select>
-                {% for version in versions %}
-                  <option value={{version.name}}>{{version.name}}</option>
-                {% endfor %}
-              </select>
-            {% endif %}
-            <div class=file-action-button-container>
-              <form method="POST" action="{{ url_for('accept_conflict_file', file_path=selected.name) }}">
-                <input class=file-action-button type='submit' value='accept'/>
-              </form>
-            </div>
-            <div class=file-action-button-container>
-              <form method="POST" action="{{ url_for('decline_conflict_file', file_path=selected.name) }}">
-                <input class=file-action-button type='submit' value='decline'/>
-              </form>
-            </div>
-          </div>
-        </th>
-      </tr>
-    {% endfor %}
-    </table>
-{% elif selected and selec_act == "view pending changes" %}
-    Pending changes of drop {{ selected.name| safe }}:
-    <table class=file-table>
-    {% for file in selected.files %}
-      <tr class=file-info-row>
-        <th class=file-name>{{ file.name|safe }}</th>
-        <th class=file-actions>
-          <div class=file-action-container>
-            <div class=file-action-button-container>
-              <form method="GET" action="{{ url_for('accept_changes', file_path=selected.name) }}">
-                <input class=file-action-button type='submit' value='accept changes'/>
-              </form>
-            </div>
-            <div class=file-action-button-container>
-              <form method="GET" action="{{ url_for('decline_changes', file_path=selected.name) }}">
-                <input class=file-action-button type='submit' value='decline changes'/>
-              </form>
-            </div>
-          </div>
-        </th>
-      </tr>
-    {% endfor %}
-    </table>
-{% elif selected and selec_act == "request_change" %}
-  Current changes requested for drop {{ selected.name | safe }}:
-  <table class=file-table>
-  {% for file in selected.files %}
-      <tr class=file-info-row>
-          <th class=file-name>{{ file.name|safe }}</th>
-          <th class=file-actions>
-            <div class=file-action-container>
-              <div class=file-action-button-container>
-                  <form method="GET" action="{{ url_for('remove_change', file_path=selected.name) }}">
-                      <input class=file-action-button type='submit' value='remove' />
-                  </form>
-              </div>
-            </div>
-          </th>
-      </tr>
-  {% endfor %}
-  </table>
-  <div class=file-action-container>
-    <div class=file-action-button-container>
-      <form method="GET" action="{{ url_for('upload_file') }}">
-        <input class=file-action-button type='submit' value='upload file' />
-      </form>
-    </div>
-    <div class=file-action-button-container>
-      <form method="GET" action="{{ url_for('submit_changes', drop_id=selected.name) }}">
-        <input class=file-action-button type='submit' value='submit changes' />
-      </form>
-    </div>
-  </div>
-{% elif selected %}
-    Name is {{ selected.name|safe }}. {{ action.description|safe }}
-    <table class=file-table>
-    {% for name, percent in selected.files.items() %}
-        <tr class=file-info-row>
-            <th class=file-name>{{ name|safe }}</th>
-            <th class=file-percent>{{ percent|safe }}%</th>
-        </tr>
-    {% endfor %}
-    </table>
 {% elif selec_act == "create_drop" %}
+    <table class=file-table>
+      <tr class=file-info-row>
+        <b>Current Directory: {{ directory|safe }}<b>
+        <div class=file-action-container>
+          <div class=file-action-button-container>
+            <a href="{{ url_for('initialize_drop', drop_path= directory) }}"><button type="button">Create Drop Here</button></a>
+          </div>
+        </div>
+      </tr>
+      <hr>
+      {% for file in directory_folders %}
+          <tr class=file-info-row>
+              <th class=file-name><a href="{{ url_for('create_drop', current_path= directory + '/' + file) }}">{{ file|safe }}</a></th>
+          </tr>
+      {% endfor %}
+    </table>
+{% elif selec_act == "subscribe_to_drop" %}
   <table class=file-table>
     <tr class=file-info-row>
-      <b>Current Directory: {{ directory|safe }}<b>
-      <div class=file-action-container>
-        <div class=file-action-button-container>
-          <a href="{{ url_for('initialize_drop', drop_path= directory) }}"><button type="button">Create Drop Here</button></a>
+      <th class=create-prompt>Input drop name:</th>
+      <th class=file-actions>
+        <div class=file-action-container>
+          <div class=file-action-button-container>
+            <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
+              Drop to Subscribe to: <input type='text' id='drop_to_subscribe_to' name='drop_to_subscribe_to' />
+              <input class=file-action-button type='submit' value='Subscribe'/>
+            </form>
+          </div>
         </div>
-      </div>
+      </th>
     </tr>
-    <hr>
-    {% for file in directory_folders %}
-        <tr class=file-info-row>
-            <th class=file-name><a href="{{ url_for('create_drop', current_path= directory + '/' + file) }}">{{ file|safe }}</a></th>
-        </tr>
-    {% endfor %}
   </table>
-{% elif selec_act == "subscribe_to_drop" %}
-<table class=file-table>
-  <tr class=file-info-row>
-    <th class=create-prompt>Input drop name:</th>
-    <th class=file-actions>
-      <div class=file-action-container>
-        <div class=file-action-button-container>
-          <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
-            Drop to Subscribe to: <input type='text' id='drop_to_subscribe_to' name='drop_to_subscribe_to' />
-            <input class=file-action-button type='submit' value='Subscribe'/>
-          </form>
-        </div>
-      </div>
-    </th>
-  </tr>
-</table>
+{% elif selected %}
+  Name is {{ selected.name|safe }}. {{ action.description|safe }}
+    <table class=file-table>
+      {% for name, percent in selected.files.items() %}
+        <tr class=file-info-row>
+          <th class=file-name>{{ name|safe }}</th>
+          <th class=file-percent>{{ percent|safe }}%</th>
+        </tr>
+      {% endfor %}
+    </table>
 {% else %}
     No Drop Selected {{ action.description|safe }}
 {% endif %}
