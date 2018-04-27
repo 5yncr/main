@@ -193,6 +193,12 @@ class FileMetadata(object):
         all_chunks = {x for x in range(self.num_chunks)}
         return all_chunks - (await self.downloaded_chunks)
 
+    @property
+    async def percent_done(self) -> float:
+        if self.num_chunks == 0:
+            return 1.0
+        return len(await self.downloaded_chunks) / self.num_chunks
+
     async def finish_chunk(self, chunk_id: int) -> None:
         """Mark chunk finished
 

@@ -40,6 +40,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_drop_peers
+from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_drops_metadata
 from syncr_backend.util.drop_util import get_subscribed_drops_metadata
 from syncr_backend.util.drop_util import sync_drop
@@ -427,7 +428,7 @@ async def handle_get_owned_drops(
     owned_drops = await get_owned_drops_metadata()
     drop_dictionaries = []
     for drop in owned_drops:
-        drop_dictionaries.append(drop_metadata_to_response(drop))
+        drop_dictionaries.append(await drop_metadata_to_response(drop))
 
     response = {
         'status': 'ok',
@@ -461,7 +462,7 @@ async def handle_get_selected_drops(
     else:
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
-        drop = drop_metadata_to_response(md)
+        drop = await drop_metadata_to_response(md)
 
         response = {
             'status': 'ok',
@@ -497,7 +498,7 @@ async def handle_get_subscribed_drops(
     subscribed_drops = await get_subscribed_drops_metadata()
     drop_dictionaries = []
     for drop in subscribed_drops:
-        drop_dictionaries.append(drop_metadata_to_response(drop))
+        drop_dictionaries.append(await drop_metadata_to_response(drop))
 
     response = {
         'status': 'ok',
@@ -857,12 +858,13 @@ async def handle_view_pending_changes(
 
 
 # Helper functions for structure of responses
-def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
+async def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     """
     Converts dropMetadata object into frontend readable dictionary.
     :param md: DropMetadata object
     :return: Dictionary for frontend
     """
+    files = await get_file_names_percent(md.id)
     response = {
         'drop_id': crypto_util.b64encode(md.id),
         'name': md.name,
@@ -871,7 +873,7 @@ def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
         'primary_owner': crypto_util.b64encode(md.owner),
         'other_owners': [crypto_util.b64encode(o) for o in md.other_owners],
         'signed_by': crypto_util.b64encode(md.signed_by),
-        'files': md.files,
+        'files': {n: int(p*100) for n, p in files.items()},
     }
 
     return response

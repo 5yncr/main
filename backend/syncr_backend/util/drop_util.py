@@ -393,6 +393,8 @@ async def get_file_metadata(
     )
     if metadata is None:
         logger.debug("file metadata not on disk, getting from network")
+        if not peers:
+            peers = await get_drop_peers(drop_id)
         metadata = await send_requests.do_request(
             request_fun=send_requests.send_file_metadata_request,
             peers=peers,
@@ -602,3 +604,17 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
             return crypto_util.b64decode(b.encode('utf-8'))
 
     return None
+
+
+async def get_file_names_percent(drop_id: bytes) -> Dict[str, float]:
+    dm = await get_drop_metadata(drop_id, [])
+    save_dir = await get_drop_location(drop_id)
+
+    ret = {}  # type: Dict[str, float]
+
+    for name, file_id in dm.files.items():
+        fm = await get_file_metadata(drop_id, file_id, save_dir, name, [])
+        done_perc = await fm.percent_done
+        ret[name] = done_perc
+
+    return ret
