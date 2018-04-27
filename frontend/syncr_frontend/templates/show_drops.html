@@ -26,7 +26,7 @@
 
 {% block drop_creation %}
 <div class="btn-group">
-  <a href="{{ url_for('create_drop') }}"><button>Create Drop</button></a>
+  <a href="{{ url_for('create_drop', current_path=directory) }}"><button>Create Drop</button></a>
   <a href="{{ url_for('subscribe_to_drop') }}"><button>Subscribe to Drop</button></a>
 </div>
 {% endblock %}
@@ -208,38 +208,20 @@
 {% elif selec_act == "create_drop" %}
   <table class=file-table>
     <tr class=file-info-row>
-      <th class=create-prompt>Create a name for your drop: </th>
-      <th class=file-actions>
-        <div class=file-action-container>
-          <div class=file-action-button-container>
-            <form method="GET" action="{{ url_for('select_directory') }}">
-              <input class=file-action-button type='submit' value='Select Directory' />
-            </form>
-          </div>
-          <div class=file-action-button-container>
-            <form method="GET" action="{{ url_for('initialize_drop') }}">
-              <input class=file-action-button type='submit' value='Create Drop'/>
-            </form>
-          </div>
+      <b>Current Directory: {{ directory|safe }}<b>
+      <div class=file-action-container>
+        <div class=file-action-button-container>
+          <a href="{{ url_for('initialize_drop', drop_path= directory) }}"><button type="button">Create Drop Here</button></a>
         </div>
-      </th>
+      </div>
     </tr>
+    <hr>
+    {% for file in directory_folders %}
+        <tr class=file-info-row>
+            <th class=file-name><a href="{{ url_for('create_drop', current_path= directory + '/' + file) }}">{{ file|safe }}</a></th>
+        </tr>
+    {% endfor %}
   </table>
-  <br><b>How to Create a Drop:</b><br><br>
-    1) First, create and name the folder that you wish to turn into a drop
-  <small>
-    <div class=text-indent>
-      -To do this in either Windows or iOS, navigate to where you would like to
-      create the folder, right-click on open space, and click "New Folder".
-    </div>
-  </small>
-    2) Next, click the "Select Directory" button above. Select this newly-created
-    folder, and hit "Accept" / "OK". <br>
-    3) After, a message will pop up showing which directory was selected.
-    Click on "Create Drop" button, and the drop will be initialized in that folder. <br>
-    4) If the folder has already been initialized, then step 3 will fail. To fix this,
-    create a new folder, give it a unique name, and repeat the steps above.<br>
-    5) All done!
 {% elif selec_act == "subscribe_to_drop" %}
 <table class=file-table>
   <tr class=file-info-row>

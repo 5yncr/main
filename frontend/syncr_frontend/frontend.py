@@ -1,6 +1,7 @@
 import platform
 import subprocess
 from os import path
+from os import scandir
 from tkinter import filedialog
 from tkinter import Tk
 
@@ -23,9 +24,9 @@ app.config.from_envvar('SYNCR_SETTINGS', silent=True)
 
 # Global Variables
 curr_action = ''
-current_drop_path = ''
 change_list = []
 testing = False
+home_path = path.expanduser('~')[1:]
 
 # Backend Access Functions
 
@@ -283,8 +284,8 @@ def get_file_versions(file_path):
     }
 
 
-@app.route('/create_drop')
-def create_drop():
+@app.route('/create_drop/<path:current_path>')
+def create_drop(current_path):
     """
     This function provides the UI with the prompt to create a drop
     :return: response that triggers the UI prompt.
@@ -295,6 +296,8 @@ def create_drop():
     return show_drops(
         None,
         None,
+        current_path,
+
     )
 
 
@@ -337,59 +340,31 @@ def transfer_ownership():
     )
 
 
-@app.route('/select_directory')
-def select_directory():
-    """
-    Allows user to select directory to turn into drop.
-    :return: directory path is stored.
-    """
-    global current_drop_path
-
-    root = Tk()
-    root.filename = filedialog.askopenfilename(
-        initialdir="/", title="Select file",
-        filetypes=[("all files", "*.*")],
-    )
-
-    directory_path = root.filename
-    root.destroy()
-
-    if directory_path is None:
-        flash("No directory selected")
-    else:
-        current_drop_path = directory_path
-
-    return show_drops(None, None)
-
-
-@app.route('/initialize_drop')
-def initialize_drop(drop_path=None):
+@app.route('/initialize_drop/<path:drop_path>')
+def initialize_drop(drop_path):
     """
     After inputting a name, a drop is created with said name.
     :return: Message sent back to frontend.
     """
-    global current_drop_path
     response = ''
 
-    if drop_path is not None:
-        current_drop_path = drop_path
-
-    if current_drop_path == '':
+    if drop_path is None:
         flash('Cannot create drop. No directory was selected.')
         has_response = False
     else:
         message = {
             'action': 'initialize_drop',
-            'directory': current_drop_path,
+            'directory': '/' + drop_path,
         }
         has_response = True
         response = send_message(message)
-        current_drop_path = ''
 
     if has_response:
         message = response.get('message')
     else:
         message = None
+
+    set_curr_action(None)
 
     return show_drops(
         None,
@@ -829,11 +804,12 @@ def startup():
 
 
 @app.route('/<drop_id>', methods=['GET', 'POST'])
-def show_drops(drop_id=None, message=None):
+def show_drops(drop_id=None, message=None, current_path=None):
     """
     Main action handler. Shows drops
     :param drop_id: ID of current drop
     :param message: Message from a particular action
+    :param current_path: current directory recognized
     :return: renders web page based off of drop and action.
     """
     global testing
@@ -868,6 +844,20 @@ def show_drops(drop_id=None, message=None):
         if request.form.get('type') == 'open_file':
             open_file_location('PUT PROPER LOCATION HERE')
 
+    # Directory Stepping
+    folders = []
+    if current_path:
+        try:
+            with scandir('/' + current_path) as entries:
+                for entry in entries:
+                    if not entry.is_file() and entry.name[0] != '.':
+                        folders.append(entry.name)
+        except Exception as e:
+            flash(e)
+            folders = []
+    else:
+        current_path = home_path
+
     if not testing:
         return render_template(
             'show_drops.html',
@@ -878,6 +868,8 @@ def show_drops(drop_id=None, message=None):
             selec_act=curr_action,
             versions=file_versions,
             new_version=new_ver,
+            directory=current_path,
+            directory_folders=folders,
         )
     else:
         return {
