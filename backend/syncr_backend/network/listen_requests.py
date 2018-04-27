@@ -9,6 +9,7 @@ from typing import Optional  # noqa
 import bencode  # type: ignore
 
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
+from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.constants import REQUEST_TYPE_CHUNK
 from syncr_backend.constants import REQUEST_TYPE_CHUNK_LIST
@@ -48,7 +49,15 @@ async def request_dispatcher(
     logger.info("incomming request type: %s", req_type)
     handle_function = function_map[req_type]
 
-    await handle_function(request, writer)
+    try:
+        await handle_function(request, writer)
+    except Exception:
+        response = {
+            'status': 'error',
+            'error': ERR_EXCEPTION,
+            'message': 'unknown error',
+        }
+        await send_response(writer, response)
 
 
 async def async_handle_request(

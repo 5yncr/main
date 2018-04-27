@@ -30,6 +30,7 @@ from syncr_backend.constants import ACTION_UNSUBSCRIBE
 from syncr_backend.constants import ACTION_VIEW_CONFLICTS
 from syncr_backend.constants import ACTION_VIEW_PENDING_CHANGES
 from syncr_backend.constants import DEFAULT_DROP_METADATA_LOCATION
+from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INVINPUT
 from syncr_backend.constants import FRONTEND_TCP_ADDRESS
 from syncr_backend.constants import FRONTEND_UNIX_ADDRESS
@@ -90,7 +91,15 @@ async def handle_frontend_request(
         }
         await send_response(conn, response)
     else:
-        await handle_function(request, conn)
+        try:
+            await handle_function(request, conn)
+        except Exception as e:
+            response = {
+                'status': 'error',
+                'error': ERR_EXCEPTION,
+                'message': str(e),
+            }
+            await send_response(conn, response)
 
 
 async def handle_accept_changes(
