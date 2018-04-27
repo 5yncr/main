@@ -8,6 +8,7 @@ setup(
         'syncr_backend.bin',
         'syncr_backend.util',
         'syncr_backend.metadata',
+        'syncr_backend.network',
         'syncr_backend.init',
         'syncr_backend.external_interface',
     ],

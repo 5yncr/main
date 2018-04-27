@@ -63,27 +63,15 @@ MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 
 
 # Frontend action types
-ACTION_REMOVE_FILE = 'remove_file'
-ACTION_GET_OWNED_DROPS = 'get_owned_drops'
-ACTION_GET_SUB_DROPS = 'get_subscribed_drops'
+ACTION_GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
 ACTION_GET_SELECT_DROPS = 'get_selected_drop'
-ACTION_GET_CONFLICTING_FILES = 'get_conflicting_files'
 ACTION_INITIALIZE_DROP = 'initialize_drop'
 ACTION_INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
-ACTION_DECLINE_CONFLICT_FILE = 'decline_conflict_file'
-ACTION_ACCEPT_CONFLICT_FILE = 'accept_conflict_file'
-ACTION_ACCEPT_CHANGES = 'accept_changes'
-ACTION_DECLINE_CHANGES = 'decline_changes'
-ACTION_VIEW_CONFLICTS = 'view_conflicts'
-ACTION_ADD_FILE = 'add_file'
 ACTION_SHARE_DROP = 'share_drop'
-ACTION_VIEW_PENDING_CHANGES = 'view_pending_changes'
 ACTION_ADD_OWNER = 'add_owner'
 ACTION_REMOVE_OWNER = 'remove_owner'
 ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
-ACTION_REQUEST_CHANGE = 'request_change'
-ACTION_TRANSFER_OWNERSHIP = 'transfer_ownership'
 
 # Frontend connection settings
 FRONTEND_TCP_ADDRESS = ('localhost', 12345)
