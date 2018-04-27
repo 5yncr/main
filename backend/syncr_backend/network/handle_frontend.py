@@ -27,6 +27,7 @@ from syncr_backend.init.node_init import get_full_init_directory
 from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
+from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
@@ -185,21 +186,27 @@ async def handle_get_selected_drops(
     else:
         drop_id = crypto_util.b64decode(request['drop_id'])
         md = await get_drop_metadata(drop_id, [])
-        drop = await drop_metadata_to_response(md)
-
-        response = {
-            'status': 'ok',
-            'result': 'success',
-            'requested_drops': drop,
-            'message': 'selected files retrieved',
-        }
-
-        if drop is None:
+        drop = drop_metadata_to_response(md)
+        file_update_status = await check_for_changes(request['drop_id'])
+        if file_update_status is None or drop is None:
             response = {
                 'status': 'error',
                 'result': 'failure',
                 'requested_drops': {},
                 'message': 'drop retrieval failed',
+            }
+        else:
+            response = {
+                'status': 'ok',
+                'result': 'success',
+                'message': 'selected files retrieved',
+                'requested_drops': drop,
+                'pending_changes': {
+                    'added': file_update_status.added,
+                    'removed': file_update_status.removed,
+                    'changed': file_update_status.changed,
+                    'unchanged': file_update_status.unchanged,
+                },
             }
 
     await send_response(conn, response)

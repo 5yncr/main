@@ -7,6 +7,7 @@ from typing import Awaitable  # noqa
 from typing import cast
 from typing import Dict  # noqa
 from typing import List
+from typing import NamedTuple
 from typing import Optional  # noqa
 from typing import Set
 from typing import Tuple
@@ -30,6 +31,8 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.metadata.drop_metadata import list_drops
 from syncr_backend.metadata.drop_metadata import save_drop_location
 from syncr_backend.metadata.file_metadata import FileMetadata
+from syncr_backend.metadata.file_metadata import get_file_metadata_from_drop_id
+from syncr_backend.metadata.file_metadata import make_file_metadata
 from syncr_backend.network import send_requests
 from syncr_backend.util import async_util
 from syncr_backend.util import crypto_util
@@ -375,6 +378,63 @@ async def get_file_metadata(
         await metadata.write_file(metadata_dir)
 
     return metadata
+
+
+class FileUpdateStatus(NamedTuple):
+    added: Set[str]
+    removed: Set[str]
+    changed: Set[str]
+    unchanged: Set[str]
+
+
+async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
+    """Checks over the local drop and returns what files have local
+    changes if any
+
+    :param drop_id: the drop to check
+    :return: a set of file names that have local changes
+    """
+    logger.info("Checking for local changes in drop: %s", drop_id)
+    drop_location = await get_drop_location(drop_id)
+    if drop_location is None:
+        return None
+    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    if drop_metadata is None:
+        return None
+
+    files = {}
+    for (dirpath, filename) in fileio_util.walk_with_ignore(
+        drop_location, [],
+    ):
+        full_name = os.path.join(dirpath, filename)
+        files[full_name] = await make_file_metadata(
+            full_name, drop_id,
+        )
+
+    changed_files = Set()
+    removed_files = Set()
+    unchanged_files = Set()
+    starting_files = Set(files.keys())
+
+    for (name, id) in drop_metadata.files.items():
+        if name in starting_files:
+            temp_metadata = await get_file_metadata_from_drop_id(
+                drop_id, id,
+            )
+            if temp_metadata == files[name]:
+                unchanged_files.add(name)
+            else:
+                changed_files.add(name)
+        else:
+            removed_files.add(name)  # Add file that no longer exists
+        starting_files.remove(name)
+
+    return FileUpdateStatus(
+        added=starting_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
 
 
 async def sync_file_contents(
