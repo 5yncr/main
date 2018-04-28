@@ -1,3 +1,8 @@
+# 27/04/2018
+      We're in the final stretch.  Almost everything works as expected, so
+      we'll spend the next week polishing and finding edge cases.
+
+
 # 20/04/2018
       The project works for the most part, we just need to do some work to
       glue together the backend and frontend

@@ -1,3 +1,11 @@
+# 27/04/2018
+      backend: Fixup backend and frontend communication (#67)
+      backend: Calculate file completion percent and send it to the frontend (#69)
+      backend: Handle exceptions in network code (#83)
+      frontend: Fixup frontend and backend communication (#19)
+      frontend: Show file percent in drop view page and remove open/delete buttons
+      frontend: bump deps in requirements.txt (#31)
+
 # 20/04/2018
       backend: Re-write large portions of code to use asyncio
       backend: Make update_drop work and add update drop script

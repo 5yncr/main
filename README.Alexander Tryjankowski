@@ -1,3 +1,7 @@
+# 27/04/2018
+      frontend: Remove Tk and implement different way to select directory path (#28)
+      frontend: Catch and handle socket errors and fix issue with drop_subscribe form (#30)
+
 # 20/04/2018
       frontend: Create hook for frontend tests to remove gui dependency (#16)
       frontend: Add versioning notification and button to frontend to allow users to create new version of drop after changes have been made to files (#17)
