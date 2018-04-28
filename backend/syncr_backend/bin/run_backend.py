@@ -2,7 +2,6 @@
 import argparse
 import asyncio
 import threading
-from typing import Any
 from typing import List
 
 from syncr_backend.external_interface.dht_util import initialize_dht
@@ -133,38 +132,6 @@ def run_debug_commands(
         execute_function(args[0], args[1:], loop)
 
     loop.stop()
-
-
-def parse_cmd(
-    command: List[str],
-    return_list: List[Any],
-) -> None:
-    """
-    Parse command given in arguments
-    :param command: str command to run
-    :param return_list: for when calling in a thread, the return list is
-    modified to be the return value of the function
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "function",
-        type=str,
-        nargs=1,
-        help="string name of the function to be ran",
-    )
-
-    parser.add_argument(
-        "--args",
-        type=str,
-        nargs='*',
-        help='arguments for the function to be ran',
-    )
-    args = parser.parse_args(args=command)
-    return_list[0] = args.function[0]
-    if args.args is not None:
-        return_list[1] = args.args
-    else:
-        return_list[1] = []
 
 
 def execute_function(

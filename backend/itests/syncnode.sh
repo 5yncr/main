@@ -15,5 +15,5 @@ printf "sync_drop $(cat /share/small) /small;sync_drop $(cat /share/large) /larg
 run_backend 0.0.0.0 2345 --external_address $(hostname) --debug_commands /work/itests/syncnode_debug_commands
 
 
-check_drop "$(cat /share/small)"
-check_drop "$(cat /share/large)"
+check_drop "dropid:$(cat /share/small)"
+check_drop "dropid:$(cat /share/large)"

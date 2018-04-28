@@ -30,7 +30,14 @@ async def a_main() -> None:
     )
     args = parser.parse_args()
 
-    drop_id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
+    id_prefix = b'dropid:'
+
+    drop_id = args.drop_id.encode('utf-8')
+    if drop_id.startswith(id_prefix):
+        drop_id = crypto_util.b64decode(drop_id[len(id_prefix):])
+    else:
+        raise ValueError("drop Id must start with prefix 'dropid:'")
+
     drop_location = await get_drop_location(drop_id)
     metadata_dir = os.path.join(drop_location, DEFAULT_DROP_METADATA_LOCATION)
     file_metadata_dir = os.path.join(
