@@ -85,16 +85,16 @@ async def handle_request_drop_metadata(
     """
     Handle a drop metadata request
 
-    :param request:
-    {
-    "protocol_version": int,
-    "request_type": DROP_METADATA (int),
-    "drop_id": string,
-    "version": string (optional),
-    "nonce": string (optional)
+    :param request: \
+    { \
+    "protocol_version": int, \
+    "request_type": DROP_METADATA (int), \
+    "drop_id": string, \
+    "version": string (optional), \
+    "nonce": string (optional) \
     }
-    :param writer: StreamWriter
-    :return: None
+    :param writer: StreamWriter \
+    :return: None \
     """
     file_location = await get_drop_location(request['drop_id'])
     file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
@@ -131,12 +131,12 @@ async def handle_request_file_metadata(
 ) -> None:
     """
     Handles a request for a file metadata
-    :param request:
-    {
-    "protocol_version": int,
-    "request_type": FILE_METADATA (int),
-    "file_id": string
-    'drop_id": string
+    :param request: \
+    { \
+    "protocol_version": int, \
+    "request_type": FILE_METADATA (int), \
+    "file_id": string \
+    'drop_id": string \
     }
     :param writer: StreamWriter
     :return: None
@@ -167,12 +167,12 @@ async def handle_request_chunk_list(
 ) -> None:
     """
     Handles a request for a file chunk list avaiable on this node
-    :param request:
-    {
-    "protocol_version": int,
-    "request_type": CHUNK_LIST (int),
-    'drop_id": string
-    "file_id": string
+    :param request: \
+    { \
+    "protocol_version": int, \
+    "request_type": CHUNK_LIST (int), \
+    'drop_id": string \
+    "file_id": string \
     }
     :param writer: StreamWriter
     :return: None
@@ -204,13 +204,13 @@ async def handle_request_chunk(
 ) -> None:
     """
     Handles a request for a chunk that is avaliable on this chunk
-    :param request:
-    {
-    "protocol_version": int,
-    "request_type": CHUNK (int),
-    "file_id": string,
-    'drop_id": string
-    "index": string,
+    :param request: \
+    { \
+    "protocol_version": int, \
+    "request_type": CHUNK (int), \
+    "file_id": string, \
+    'drop_id": string \
+    "index": string, \
     }
     :param writer: StreamWriter
     :return: None
@@ -256,12 +256,12 @@ async def handle_request_new_drop_metadata(
     request: dict, writer: asyncio.StreamWriter,
 ) -> None:
     """
-    :param request:
-    {
-    "protocol_version": int,
-    "request_type": NEW_DROP_METADATA (int),
-    "latest_version_id": int,
-    "latest_version_nonce": int
+    :param request: \
+    { \
+    "protocol_version": int, \
+    "request_type": NEW_DROP_METADATA (int), \
+    "latest_version_id": int, \
+    "latest_version_nonce": int \
     }
     :param writer: StreamWriter
     :return: None

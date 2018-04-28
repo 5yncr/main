@@ -48,7 +48,8 @@ async def write_chunk(
     filepath: str, position: int, contents: bytes, chunk_hash: bytes,
     chunk_size: int=DEFAULT_CHUNK_SIZE,
 ) -> None:
-    """Takes a filepath, position, contents, and contents hash and writes it to
+    """
+    Takes a filepath, position, contents, and contents hash and writes it to
     a file correctly.  Assumes the file has been created.  Will check the hash,
     and raise a VerificationException if the provided chunk_hash doesn't match.
     May raise relevant IO exceptions.
@@ -59,7 +60,7 @@ async def write_chunk(
     :param position: the posiiton in the file to write to
     :param contents: the contents to write
     :param chunk_hash: the expected hash of contents
-    :param chunk_size: (optional) override the chunk size, used to calculate
+    :param chunk_size: (optional) override the chunk size, used to calculate \
     the position in the file
     :return: None
     """

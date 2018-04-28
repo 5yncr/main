@@ -206,7 +206,7 @@ class TrackerPeerStore(DropPeerStore):
         Asks tracker for the nodes and their ip ports for a specified drop
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
         :return: boolean (success on receiving peers),
-                list of [node_id, ip, port]
+        list of [node_id, ip, port]
         """
         request = {
             'request_type': TRACKER_REQUEST_GET_PEERS,

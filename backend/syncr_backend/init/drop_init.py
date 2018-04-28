@@ -22,7 +22,8 @@ logger = get_logger(__name__)
 
 
 async def initialize_drop(directory: str) -> bytes:
-    """Initialize a drop from a directory. Generates the necesssary drop and
+    """
+    Initialize a drop from a directory. Generates the necesssary drop and
     file metadata files and writes the drop location to the central config dif
 
     :param directory: The directory to initialize a drop from
@@ -60,15 +61,15 @@ async def make_drop_metadata(
     ignore: List[str]=[],
     drop_id: Optional[bytes]=None
 ) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
-    """Makes drop metadata and file metadatas from a directory
-
+    """
+    Makes drop metadata and file metadatas from a directory
     :param path: The directory to make metadata from
     :param name: The name of the drop to create
     :param drop_id: The drop id of the drop metadata, must match the owner
     :param owner: The owner, must match the drop id
     :param other_owners: Other owners, may be empty
-    :return: A tuple of the drop metadata, and a dict from file names to file
-    metadata
+    :return: A tuple of the drop metadata, and a dict from file names to file \
+             metadata
     """
     logger.info("creating drop metadata for drop name %s", drop_name)
     if drop_id is None:

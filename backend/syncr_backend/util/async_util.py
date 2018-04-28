@@ -47,7 +47,8 @@ async def limit_gather(fs, n, task_timeout=0):
 
 
 async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
-    """Processses up to n tasks from queue at a time, putting the results in
+    """
+    Processses up to n tasks from queue at a time, putting the results in
     done_queue.
 
     Otherwise similar to limit_gather.
@@ -59,7 +60,7 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
     :param queue: The queue of input tasks
     :param n: The max number of pending tasks at a time
     :param done_queue: Queue to add results to
-    :param task_timeout: Allow tasks to take up to this long before running
+    :param task_timeout: Allow tasks to take up to this long before running \
     another
     """
     tasks = []

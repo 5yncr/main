@@ -107,7 +107,7 @@ class DHTKeyStore(PublicKeyStore):
         verification
         :param request_node_id: SHA256 hash
         :return: boolean (success of getting key),
-                2048 RSA public key (if boolean is True)
+        2048 RSA public key (if boolean is True)
         """
 
         result = str(await self.node_instance.get(request_node_id), 'utf-8')
@@ -162,7 +162,7 @@ class TrackerKeyStore(PublicKeyStore):
         verification
         :param request_node_id: SHA256 hash
         :return: boolean (success of getting key),
-                2048 RSA public key (if boolean is True)
+        2048 RSA public key (if boolean is True)
         """
         request = {
             'request_type': TRACKER_REQUEST_GET_KEY,

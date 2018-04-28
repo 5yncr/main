@@ -37,8 +37,8 @@ async def do_request(
     """Helper function for sending a request to many peers.  Will try calling
     request_fun with fun_args for peers in peers until one succeeds
 
-    :param request_fun: The request function.  Must take an ip, port, and some
-    number of kwargs
+    :param request_fun: The request function.  Must take an ip, port, and \
+    some number of kwargs
     :param peers: A list of peers to try to talk to
     :param fun_args: The arguments to pass to request_fun for each peer
     :return: The return of a successful call to request_fun

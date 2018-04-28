@@ -20,7 +20,7 @@ def force_initialize_node(init_directory: Optional[str]=None) -> None:
     Initialize new node in .node directory
     and overwrite existing .node dir
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     logger.warning("forcing node initialization of %s", init_directory)
@@ -36,7 +36,7 @@ def delete_node_directory(init_directory: Optional[str]=None) -> None:
     """
     Deletes the .node (or passed in) directory and all of its contents
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     full_directory = get_full_init_directory(init_directory)
@@ -50,7 +50,7 @@ def is_node_initialized(init_directory: Optional[str]=None) -> bool:
     """
     Checks if node is node is initialized
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     :return: whether a node directory exists
     """
@@ -63,7 +63,7 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
     Initialize new node in .node directory
     Create the private key file
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     full_directory = get_full_init_directory(init_directory)
@@ -99,7 +99,7 @@ def write_private_key_to_disk(
     """
     Write Private Key (and public key attached) to file
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     logger.debug("writing private key")
@@ -122,7 +122,7 @@ async def load_private_key_from_disk(
     """
     Load Private Key (and public key) from file
 
-    :param init_directory: directory where node files are stored,
+    :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
     """
     logger.debug("reading private key")
