@@ -21,7 +21,10 @@ _node_instance = None
 def get_dht() -> Server:
     """
     returns the node_instance of the dht
+
     Throws TypeError if DHT has not been initialized
+
+    :return: The DHT Server
     """
     global _node_instance
     if _node_instance is None:
@@ -36,8 +39,9 @@ def initialize_dht(
     """
     connects to the distributed hash table
     if no bootstrap ip port pair list is given, it starts a new dht
-    :param bootstrap_ip_port_pair_list:
-    list of ip port tuples to connect to the dht
+
+    :param bootstrap_ip_port_pair_list: list of ip port tuples to connect to \
+            the dht
     :param listen_port: port to listen on
     :return: instance of server
     """
@@ -53,26 +57,19 @@ def initialize_dht(
     if len(bootstrap_ip_port_pair_list) > 0:
         loop.run_until_complete(node.bootstrap(bootstrap_ip_port_pair_list))
 
-    # t1 = threading.Thread(target=dht_thread, args=(
-    #     loop, node, listen_port,)
-    # )
-    # t1.start()
-
     _node_instance = node
 
 
 class DropPeerDHTStorage(ForgetfulStorage):
     """
     Extension of the default kademlia storage module
+
     It is different in that when given a list of bytes, it checks to see if
     it is an encoded set. If it is, it unions it with the rest of the
     sets
     """
 
     def __init__(self) -> None:
-        """
-
-        """
         self.timeouts = {}  # type: Dict[Tuple[int, Tuple[Any, int, str]], int]
 
         super().__init__()
@@ -81,6 +78,7 @@ class DropPeerDHTStorage(ForgetfulStorage):
         """
         Cull peerlist at key of out of date entries
         If entry at key is not a peerlist, do nothing
+
         :param key: key of peerlist
         """
         current_time = int(time.time())
@@ -113,7 +111,9 @@ class DropPeerDHTStorage(ForgetfulStorage):
     def __getitem__(self, key: Any) -> Any:
         """
         Gets item from storage
-        if item is an encoded peerlist, it culls outdated values
+
+        If item is an encoded peerlist, it culls outdated values
+
         :param key: key to access value in dht
         """
         self.cull_peerlist(key)

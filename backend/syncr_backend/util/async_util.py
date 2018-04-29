@@ -87,6 +87,14 @@ CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 
 def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
+    """
+    Make a decorator that caches function calls
+
+    :param maxsize: The maximum cache size
+    :param cache_obj: Override the default LRU cache
+    :param cache_none: Set to True to cache `None` results
+    :return: A decorator for a function
+    """
 
     def decorator(fn):
         if cache_obj is None:

@@ -52,6 +52,7 @@ class DropVersion(object):
 
 
 class DropMetadata(object):
+    """Representation of a drop's metadata file"""
 
     def __init__(
         self, drop_id: bytes, name: str, version: DropVersion,
@@ -72,15 +73,19 @@ class DropMetadata(object):
         self.sig = sig
         self._protocol_version = protocol_version
         self._files_hash = files_hash
+        self._log = None  # type: Optional[logging.Logger]
 
     @property
     def log(self) -> logging.Logger:
-        return get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.id).decode('utf-8'),
-            ]),
-        )
+        """A logger for this object"""
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.id).decode('utf-8'),
+                ]),
+            )
+        return self._log
 
     @property
     async def files_hash(self) -> bytes:
@@ -101,8 +106,8 @@ class DropMetadata(object):
     async def verify_files_hash(self) -> None:
         """Verify the file hash in this object
 
-        Returns None if the hash is OK, throwns an exception if the hash is not
-        good or has not been set
+        Returns None if the hash is OK, throwns a VerificationException if the
+        hash is not good or has not been set
         """
         if self._files_hash is None:
             self.log.error("no files hash found when verifying")
@@ -156,7 +161,7 @@ class DropMetadata(object):
         """Verify the signature in the header
 
         If the signature is OK, returns none, if the signature is None or is
-        invalid throws an exception
+        invalid throws a VerificationException
         """
         if self.sig is None:
             self.log.error("header signature not found when verifying")
@@ -204,6 +209,7 @@ class DropMetadata(object):
     def make_filename(
         id: bytes, version: Union[str, DropVersion],
     ) -> str:
+        """Make the filename for a drop metadata"""
         return "%s_%s" % (
             crypto_util.b64encode(id).decode("utf-8"), str(version),
         )
@@ -396,6 +402,11 @@ async def get_drop_location(drop_id: bytes) -> str:
 
 
 def list_drops() -> List[bytes]:
+    """
+    List the drops on this node
+
+    :return: List of drop IDs
+    """
     save_path = _get_save_path()
     names = os.listdir(save_path)
 
@@ -414,6 +425,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
     """
     Gets the public key from disk if possible otherwise request it from
     PublicKeyStore
+
     :param node_id: bytes for the node you want public key of
     :return: PublicKey
     """
@@ -447,6 +459,7 @@ async def get_pub_key(node_id: bytes) -> crypto_util.rsa.RSAPublicKey:
 
 
 async def send_my_pub_key() -> None:
+    """Send the pub key for this node the the Key Store"""
     this_node_id = await node_id_from_private_key(
         await load_private_key_from_disk(),
     )

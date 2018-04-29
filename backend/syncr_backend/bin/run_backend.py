@@ -119,6 +119,7 @@ def run_debug_commands(
 ) -> None:
     """
     Read and execute commands a list of semicolon separated commands as input
+
     :param commands: list of semicolon separated commands
     """
     with open(commands_file) as f:
@@ -139,13 +140,13 @@ def execute_function(
 ) -> None:
     """
     Runs a function with the given args
-    TODO: add real drop/metadata request commands that interface
-    with the filesystem
-    TODO: handle exceptions for real
 
     :param function_name: string name of the function to run
     :param args: arguments for the function to run
     """
+    # TODO: add real drop/metadata request commands that interface
+    #  with the filesystem
+    # TODO: handle exceptions for real
     # for functions that create or destroy the init directory
     if function_name == "node_init":
         node_init.initialize_node(*args)

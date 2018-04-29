@@ -124,6 +124,7 @@ async def load_private_key_from_disk(
 
     :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :return: A private key
     """
     logger.debug("reading private key")
     full_directory = get_full_init_directory(init_directory)

@@ -43,15 +43,19 @@ class FileMetadata(object):
         self.drop_id = drop_id
         self._save_dir = None  # type: Optional[str]
         self.file_name = file_name
+        self._log = None  # type: Optional[logging.Logger]
 
     @property
     def log(self) -> logging.Logger:
-        return get_logger(
-            '.'.join([
-                __name__, self.__class__.__name__,
-                crypto_util.b64encode(self.file_id).decode('utf-8'),
-            ]),
-        )
+        """A logger for this object"""
+        if self._log is None:
+            self._log = get_logger(
+                '.'.join([
+                    __name__, self.__class__.__name__,
+                    crypto_util.b64encode(self.file_id).decode('utf-8'),
+                ]),
+            )
+        return self._log
 
     def encode(self) -> bytes:
         """Make the bencoded file that will be transfered on the wire
@@ -195,6 +199,7 @@ class FileMetadata(object):
 
     @property
     async def percent_done(self) -> float:
+        """How done the file is, in range [0,1]"""
         if self.num_chunks == 0:
             return 1.0
         return len(await self.downloaded_chunks) / self.num_chunks
@@ -287,6 +292,7 @@ async def get_file_metadata_from_drop_id(
 ) -> Optional[FileMetadata]:
     """
     Gets the file metadata of a file in a drop
+
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name
     :return Optional[FileMetadata] of the given file

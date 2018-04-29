@@ -7,6 +7,7 @@ from typing import Dict
 
 import bencode  # type: ignore
 
+from syncr_backend.constants import ERR_EXCEPTION
 from syncr_backend.constants import ERR_INCOMPAT
 from syncr_backend.constants import ERR_NEXIST
 from syncr_backend.util.log_util import get_logger
@@ -20,6 +21,7 @@ async def send_response(
 ) -> None:
     """
     Sends a response to a connection and then closes writing to that connection
+
     :param writer: StreamWriter to write to
     :param response: Dict[Any, Any] response
     :return: None
@@ -56,6 +58,11 @@ class IncompatibleProtocolVersionException(SyncrNetworkException):
     pass
 
 
+class UnhandledExceptionException(SyncrNetworkException):
+    """Other end experienced an unhandled exception"""
+    pass
+
+
 class NoPeersException(SyncrNetworkException):
     """No peers found or provided to a request function"""
     pass
@@ -69,6 +76,7 @@ def raise_network_error(
     exceptionmap = {
         ERR_NEXIST: NotExistException,
         ERR_INCOMPAT: IncompatibleProtocolVersionException,
+        ERR_EXCEPTION: UnhandledExceptionException,
     }
     raise exceptionmap[errno]
 

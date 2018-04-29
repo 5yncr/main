@@ -61,6 +61,7 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     """
     Provides a DropPeerStore either by means of DHT or tracker depending
     on config file
+
     :param node_id: bytes of the node id for this node
     :return: DropPeerStore
     """
@@ -112,6 +113,7 @@ class DHTPeerStore(DropPeerStore):
     ) -> None:
         """
         Sets up DHT peer store
+
         :param node_id: node_id of this node
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
         """
@@ -122,6 +124,7 @@ class DHTPeerStore(DropPeerStore):
     async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
         """
         Add entry to dht
+
         :param drop_id: drop_id entry to update
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
@@ -166,6 +169,7 @@ class TrackerPeerStore(DropPeerStore):
         """
         Sets up a TrackerPeerStore with the trackers ip and port and the id of
         the given node
+
         :param node_id: SHA256 hash
         :param ip: string of ipv4 or ipv6
         :param port: port for the tracker connection
@@ -178,6 +182,7 @@ class TrackerPeerStore(DropPeerStore):
         """
         Adds their node_id, ip, and port to a list of where a given drop is
         available
+
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
         :param ip: string of ipv4 or ipv6
         :param port: port where drop is being hosted
@@ -204,9 +209,10 @@ class TrackerPeerStore(DropPeerStore):
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
         """
         Asks tracker for the nodes and their ip ports for a specified drop
+
         :param drop_id: node_id (SHA256 hash) + SHA256 hash
-        :return: boolean (success on receiving peers),
-        list of [node_id, ip, port]
+        :return: boolean (success on receiving peers), list of \
+                [node_id, ip, port]
         """
         request = {
             'request_type': TRACKER_REQUEST_GET_PEERS,

@@ -63,6 +63,7 @@ async def make_drop_metadata(
 ) -> Tuple[DropMetadata, Dict[str, FileMetadata]]:
     """
     Makes drop metadata and file metadatas from a directory
+
     :param path: The directory to make metadata from
     :param name: The name of the drop to create
     :param drop_id: The drop id of the drop metadata, must match the owner

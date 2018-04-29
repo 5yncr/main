@@ -81,7 +81,9 @@ def encode_peerlist(
 ) -> bytes:
     """
     encodes peerlist into bytes to put in dht
+
     :param peerlist: list of dht peers
+    :return: bytes of encoded peerlist
     """
     return encode_peerlist_prefix + bencode.encode(list(peerlist))
 
@@ -89,7 +91,9 @@ def encode_peerlist(
 def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
     """
     decodes peerlist from bytes representation to list
+
     :param rawpl: bytes form of peerlist
+    :return: A list of peers, or None
     """
     if rawpl[:len(encode_peerlist_prefix)] == encode_peerlist_prefix:
         peerlist = rawpl[len(encode_peerlist_prefix):]

@@ -30,6 +30,7 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     """
     Provides a PublicKeyStore either by means of DHT or tracker depending
     on config file
+
     :return: PublicKeyStore
     """
     config_file = await load_config_file()
@@ -80,6 +81,7 @@ class DHTKeyStore(PublicKeyStore):
     ) -> None:
         """
         Sets up tracker key store
+
         :param node_id: node id and SHA256 hash
         :param bootstrap_list: list of ip,port to bootstrap connect to dht
         """
@@ -89,6 +91,7 @@ class DHTKeyStore(PublicKeyStore):
     async def set_key(self, key: bytes) -> bool:
         """
         Sets the public key of the this node on the DHT
+
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
         """
@@ -105,9 +108,10 @@ class DHTKeyStore(PublicKeyStore):
         """
         Asks DHT for the public key of a given node for sake of signature
         verification
+
         :param request_node_id: SHA256 hash
-        :return: boolean (success of getting key),
-        2048 RSA public key (if boolean is True)
+        :return: boolean (success of getting key), 2048 RSA public key \
+                (if boolean is True)
         """
 
         result = str(await self.node_instance.get(request_node_id), 'utf-8')
@@ -124,6 +128,7 @@ class TrackerKeyStore(PublicKeyStore):
         """
         Sets up a TrackerKeyStore with the trackers ip and port and the id of
         the given node
+
         :param node_id: SHA256 hash
         :param ip: string of ipv4 or ipv6
         :param port: port for the tracker connection
@@ -135,6 +140,7 @@ class TrackerKeyStore(PublicKeyStore):
     async def set_key(self, key: bytes) -> bool:
         """
         Sets the public key of the this node on the tracker
+
         :param key: 4096 RSA public key
         :return: boolean on success of setting key
         """
@@ -160,9 +166,10 @@ class TrackerKeyStore(PublicKeyStore):
         """
         Asks tracker for the public key of a given node for sake of signature
         verification
+
         :param request_node_id: SHA256 hash
-        :return: boolean (success of getting key),
-        2048 RSA public key (if boolean is True)
+        :return: boolean (success of getting key), 2048 RSA public key \
+                (if boolean is True)
         """
         request = {
             'request_type': TRACKER_REQUEST_GET_KEY,

@@ -43,7 +43,12 @@ logger = get_logger(__name__)
 async def handle_frontend_request(
         request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
+    """
+    Handle a request from the frontend
 
+    :param request: The request dict
+    :param conn: The StreamWriter to write the response to
+    """
     function_map = {
         ACTION_ADD_OWNER: handle_add_owner,
         ACTION_DELETE_DROP: handle_delete_drop,
@@ -82,11 +87,11 @@ async def handle_add_owner(
 ) -> None:
     """
     Handling function to an owner to a drop
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "owner_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
+    "owner_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -124,10 +129,10 @@ async def handle_delete_drop(
 ) -> None:
     """
     Handling function to delete a drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -169,10 +174,10 @@ async def handle_get_selected_drops(
 ) -> None:
     """
     Handling function to a drop selected by user.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -217,9 +222,9 @@ async def handle_get_owned_subscribed_drops(
 ) -> None:
     """
     Handling function to retrieve drops that user owns and is subscribed to
-    :param request:
-    {
-    'action': string
+
+    :param request: { \
+    'action': string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -256,11 +261,11 @@ async def handle_input_subscribe_drop(
 ) -> None:
     """
     Handling function to subscribe to drop that user specifies.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "file_path": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
+    "file_path": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -297,10 +302,10 @@ async def handle_initialize_drop(
 ) -> None:
     """
     Handling function to create drop whose name is specified by user.
-    :param request:
-    {
-    "action": string
-    "drop_name": string
+
+    :param request: { \
+    "action": string, \
+    "drop_name": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -349,11 +354,11 @@ async def handle_remove_owner(
 ) -> None:
     """
     Handling function to remove an owner from a drop
-    :param request:
-    {
-    "action": string
-    "drop_id": string
-    "owner_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
+    "owner_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -392,10 +397,10 @@ async def handle_share_drop(
 ) -> None:
     """
     Handling function to retrieve id that can be shared with other nodes.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -422,10 +427,10 @@ async def handle_unsubscribe(
 ) -> None:
     """
     Handling function to unsubscribe from a subscribed drop.
-    :param request:
-    {
-    "action": string
-    "drop_id": string
+
+    :param request: { \
+    "action": string, \
+    "drop_id": string, \
     }
     :param conn: socket.accept() connection
     :return: None
@@ -465,6 +470,7 @@ async def handle_unsubscribe(
 async def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
     """
     Converts dropMetadata object into frontend readable dictionary.
+
     :param md: DropMetadata object
     :return: Dictionary for frontend
     """
@@ -487,7 +493,8 @@ async def drop_metadata_to_response(md: DropMetadata) -> Dict[str, Any]:
 async def setup_frontend_server() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and then sends response
-    :return:
+
+    :return: An asyncio Server, either Unix socket or TCP socket
     """
 
     op_sys = platform.system()
@@ -500,6 +507,13 @@ async def setup_frontend_server() -> asyncio.events.AbstractServer:
 async def async_handle_request(
     reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
 ) -> None:
+    """
+    Handle an async request.  Reads from reader, then call function
+    dispatcher
+
+    :param reader: The StreamReader to read from
+    :param writer: The StreamWriter the response will go to
+    """
     request = b''
 
     while 1:
@@ -514,7 +528,8 @@ async def async_handle_request(
 async def _tcp_handle_request() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and sends response over tcp socket
-    :return:
+
+    :return: An asyncio Server for TCP requests
     """
 
     return await asyncio.start_server(
@@ -527,7 +542,8 @@ async def _tcp_handle_request() -> asyncio.events.AbstractServer:
 async def _unix_handle_request() -> asyncio.events.AbstractServer:
     """
     Listens for request from frontend and sends response over unix socket
-    :return:
+
+    :return: An asyncio Server for Unix sockets
     """
 
     try:

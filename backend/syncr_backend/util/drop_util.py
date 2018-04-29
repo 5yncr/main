@@ -50,6 +50,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
+    :return: true if syncing finished, false otherwise
     """
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
@@ -61,7 +62,7 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
                 drop_id=drop_id,
                 file_name=file_name,
                 file_id=file_id,
-                # call rotate(drop_peers) so each file starts with a new peer
+                # callrotate(drop_peers) so each file starts with a new peer
                 peers=rotate(drop_peers),
                 save_dir=save_dir,
             ) for file_name, file_id in drop_metadata.files.items()
@@ -78,6 +79,7 @@ T = TypeVar('T')
 
 def rotate(l: List[T]) -> List[T]:
     """Puts the first element at the back and return the list
+
     :param l: a list
     :return: that list, with the first element at the back
     """
@@ -91,6 +93,18 @@ async def sync_and_finish_file(
     drop_id: bytes, file_name: str, file_id: bytes,
     peers: List[Tuple[str, int]], save_dir: str,
 ) -> bool:
+    """
+    Sync a file from peers, returning whether it finished. If finished, mark it
+    done in the filesystem
+
+    :param drop_id: Drop ID
+    :param file_name: The file name. Both name and ID are needed to account \
+            for identical files
+    :param file_id: The file ID
+    :param peers: Peers to ownload from
+    :param save_dir: The top level directory of the drop
+    :return: True if the file is finished, false otherwise
+    """
     remaining_chunks = await sync_file_contents(
         drop_id=drop_id,
         file_name=file_name,
@@ -106,6 +120,7 @@ async def sync_and_finish_file(
 
 
 class PermissionError(Exception):
+    """Raised if update drop tries to modify a drop it doesn't own"""
     pass
 
 
@@ -120,7 +135,6 @@ async def update_drop(
     :param drop_id: The drop_id to update
     :param add_secondary_owner: new secondary owner for a drop
     :param remove_secondary_owner: secondary owner to remove from a drop
-
     """
     drop_directory = await get_drop_location(drop_id)
     old_drop_m = await DropMetadata.read_file(
@@ -259,7 +273,10 @@ async def verify_version(
     """Verify the DropMetadata version recursively
 
     If this version and all prior versions leading up to it are legitimate
-    returns none, otherwise throws an exception
+    returns none, otherwise throws a VerificationException
+
+    :param drop_metadata: A DropMetadata object
+    :param peers: List of peers to download metadata objects from
     """
     if len(drop_metadata.previous_versions) == 0:
         await drop_metadata.verify_header()
@@ -310,13 +327,13 @@ async def verify_version(
 
 
 async def get_owned_subscribed_drops_metadata(
-
 ) -> Tuple[List[DropMetadata], List[DropMetadata]]:
     """
     Gets the list of metadata objects for both subscribed and owned drops.
-    :return: Tuple of metadata objects for subscribed and owned drops.
 
     format: (Owned drop metadata, Subscribed drop metadata)
+
+    :return: Tuple of metadata objects for subscribed and owned drops.
     """
 
     drops = list_drops()
@@ -381,6 +398,7 @@ async def get_file_metadata(
 
 
 class FileUpdateStatus(NamedTuple):
+    """Four sets for keeping track of which files are in what status"""
     added: Set[str]
     removed: Set[str]
     changed: Set[str]
@@ -547,6 +565,16 @@ async def peers_and_chunks(
 async def get_chunk_list(
     ip: str, port: int, drop_id: bytes, file_id: bytes,
 ) -> Set[int]:
+    """
+    Get the list of chunks (ip, port) has.  This function exists so the result
+    can be cached.
+
+    :param ip: IP to connect to
+    :param port: Port to connect to
+    :param drop_id: Drop ID
+    :param file_id: File ID to get chunks for
+    :return: Set of chunk indexes
+    """
     return set(await send_requests.send_chunk_list_request(
         ip=ip,
         port=port,
@@ -596,12 +624,14 @@ async def download_chunk_form_peer(
 
 
 class PeerStoreError(Exception):
+    """Raised if get_drop_peers fails to get peers"""
     pass
 
 
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop. Also shuffles the list
+
     :param drop_id: id of drop
     :return: A list of peers in format (ip, port)
     """
@@ -622,6 +652,12 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
 
 
 def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
+    """
+    Figure out the drop ID from a directory
+
+    :param save_dir: The directory to check
+    :return: The drop ID or none
+    """
     metadata_dir = os.path.join(save_dir, DEFAULT_DROP_METADATA_LOCATION)
     files = os.listdir(metadata_dir)
 
@@ -635,6 +671,12 @@ def get_drop_id_from_directory(save_dir: str) -> Optional[bytes]:
 
 
 async def get_file_names_percent(drop_id: bytes) -> Dict[str, float]:
+    """
+    Get dict from file names to percent done (in range [0,1])
+
+    :param drop_id: Drop to get files for
+    :return: Dict from file name to percent done
+    """
     dm = await get_drop_metadata(drop_id, [])
     save_dir = await get_drop_location(drop_id)
 

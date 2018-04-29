@@ -93,8 +93,8 @@ async def handle_request_drop_metadata(
     "version": string (optional), \
     "nonce": string (optional) \
     }
-    :param writer: StreamWriter \
-    :return: None \
+    :param writer: StreamWriter
+    :return: None
     """
     file_location = await get_drop_location(request['drop_id'])
     file_location = os.path.join(file_location, DEFAULT_DROP_METADATA_LOCATION)
@@ -131,11 +131,12 @@ async def handle_request_file_metadata(
 ) -> None:
     """
     Handles a request for a file metadata
+
     :param request: \
     { \
     "protocol_version": int, \
     "request_type": FILE_METADATA (int), \
-    "file_id": string \
+    "file_id": string, \
     'drop_id": string \
     }
     :param writer: StreamWriter
@@ -167,11 +168,12 @@ async def handle_request_chunk_list(
 ) -> None:
     """
     Handles a request for a file chunk list avaiable on this node
+
     :param request: \
     { \
     "protocol_version": int, \
     "request_type": CHUNK_LIST (int), \
-    'drop_id": string \
+    'drop_id": string, \
     "file_id": string \
     }
     :param writer: StreamWriter
@@ -204,6 +206,7 @@ async def handle_request_chunk(
 ) -> None:
     """
     Handles a request for a chunk that is avaliable on this chunk
+
     :param request: \
     { \
     "protocol_version": int, \
@@ -274,6 +277,13 @@ async def start_listen_server(
     tcp_ip: str,
     tcp_port: str,
 ) -> asyncio.events.AbstractServer:
+    """
+    Start the listen server
+
+    :param tcp_ip: Address to bind to
+    :param tcp_port: Port to bind to
+    :return: An asyncio Server
+    """
     return await asyncio.start_server(
         async_handle_request, tcp_ip, int(tcp_port),
     )

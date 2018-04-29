@@ -31,6 +31,11 @@ write_locks = defaultdict(asyncio.Lock)  # type: Dict[str, asyncio.Lock]
 
 
 async def load_config_file() -> Dict[str, Any]:
+    """
+    Read and parse the Drop Peer Store config
+
+    :return: Parsed dict of config file contents
+    """
     init_directory = get_full_init_directory(None)
     dps_config_path = os.path.join(init_directory, DEFAULT_DPS_CONFIG_FILE)
 
