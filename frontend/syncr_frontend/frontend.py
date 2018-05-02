@@ -33,6 +33,7 @@ def send_message(message):
     """
     Sends given message to backend. Waits for a response
     or until TIMEOUT
+
     :param message: message sent to backend
     :return: response from server
     """
@@ -45,6 +46,7 @@ def send_message(message):
 def open_file_location(file_path):
     """
     Opens the location of the file
+
     :param file_path: Path of the file on computer
     :return: opens location of file
     """
@@ -62,8 +64,8 @@ def open_file_location(file_path):
 
 def get_owned_subscribed_drops():
     """
-    :return: Gets a tuple of of dictionaries in format
-    (owned drop dict, subscribed drop dict)
+    :return: Gets a tuple of of dictionaries in format (owned drop dict, \
+            subscribed drop dict)
     """
     message = {
         'action': 'get_owned_subscribed_drops',
@@ -114,6 +116,7 @@ def is_in_drop_list(drop_id, drop_list):
 def get_drop_id(file_path):
     """
     Gets drop id from file path
+
     :param file_path: File path that contains drop ID
     :return: drop ID
     """
@@ -134,6 +137,7 @@ def get_drop_id(file_path):
 def get_file_name(file_path):
     """
     Gets file name from file path
+
     :param file_path: File path that contains file name
     :return: file name
     """
@@ -153,6 +157,7 @@ def set_curr_action(action_update):
     """
     Sets the global variable to the current pressed
     button
+
     :param action_update: name of action
     :return: none
     """
@@ -165,6 +170,7 @@ def set_curr_action(action_update):
 def create_drop(current_path):
     """
     This function provides the UI with the prompt to create a drop
+
     :return: response that triggers the UI prompt.
     """
 
@@ -182,6 +188,7 @@ def create_drop(current_path):
 def subscribe_to_drop():
     """
     This function provides the UI with the prompt to subscribe to a drop.
+
     :return: response that triggers the UI prompt.
     """
 
@@ -197,6 +204,7 @@ def subscribe_to_drop():
 def initialize_drop(drop_path):
     """
     After inputting a name, a drop is created with said name.
+
     :return: Message sent back to frontend.
     """
     response = ''
@@ -229,6 +237,7 @@ def initialize_drop(drop_path):
 def input_drop_to_subscribe(drop_code=None):
     """
     After inputting a name, user is subscribed to drop if it exists
+
     :return: Message sent to frontend.
     """
     if drop_code is None:
@@ -252,6 +261,7 @@ def input_drop_to_subscribe(drop_code=None):
 def share_drop(drop_id):
     """
     Sends 'share drop' message to backend
+
     :param drop_id: Drop to be shared
     :return: backend sends back message with info to share drop
     """
@@ -272,6 +282,7 @@ def share_drop(drop_id):
 def add_owner(drop_id, owner_id=None):
     """
     Communicate with backend to add an owner to specified drop
+
     :param drop_id: ID of drop
     :return: display updated owners body of page
     """
@@ -302,6 +313,7 @@ def add_owner(drop_id, owner_id=None):
 def remove_owner(drop_id, owner_id):
     """
     Communicate with backend to remove an owner from specified drop
+
     :param drop_id: ID of drop
     :param owner_id: ID of owner to remove from drop
     :return: display updated owners body of page
@@ -325,6 +337,7 @@ def remove_owner(drop_id, owner_id):
 def view_owners(drop_id, message=None):
     """
     Update current action to display list of owners
+
     :param drop_id: ID of drop to view owners
     :param message: message from owner action if any
     :return: display owners on body of page
@@ -338,6 +351,7 @@ def view_owners(drop_id, message=None):
 def whitelist(drop_id):
     """
     Communicate with backend to whitelist node
+
     :param drop_id: ID of drop where node is whitelisted
     :return: Display prompt on page to whitelist node
     """
@@ -350,6 +364,7 @@ def whitelist(drop_id):
 def delete_drop(drop_id):
     """
     Sends the 'delete drop' message to backend
+
     :param drop_id: name of the drop to be deleted
     :return: drop is removed from backend and frontend
     """
@@ -373,6 +388,7 @@ def delete_drop(drop_id):
 def unsubscribe(drop_id):
     """
     Communicate with backend to unsubscribe from drop
+
     :param drop_id: ID of drop to be unsubscribed
     :return: UI and backend update to not have subscribed drop.
     """
@@ -396,6 +412,7 @@ def new_version(drop_id):
     """
     Tells backend to create new version from
     changed files for specified drop
+
     :param drop_id: drop to create new version for
     :return: renders web page based off backend response
     """
@@ -422,6 +439,7 @@ def startup():
 def show_drops(drop_id=None, message=None, current_path=None):
     """
     Main action handler. Shows drops
+
     :param drop_id: ID of current drop
     :param message: Message from a particular action
     :param current_path: current directory recognized

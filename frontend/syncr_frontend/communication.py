@@ -14,8 +14,8 @@ from .constants import TIMEOUT
 def send_request(request):
     """
     Sends message to backend over socket connection and waits for a response
+
     :param request: dictionary of info to be sent to backend
-    :return:
     """
 
     # Convert dictionary to send-able type
@@ -49,8 +49,6 @@ def send_request(request):
 def _tcp_send_message(msg):
     """
     Sends message to backend over tcp socket and awaits a response
-    :param msg:
-    :return:
     """
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -77,8 +75,6 @@ def _tcp_send_message(msg):
 def _unix_send_message(msg):
     """
     Sends message to backend over unix socket and awaits a response
-    :param msg:
-    :return:
     """
 
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
