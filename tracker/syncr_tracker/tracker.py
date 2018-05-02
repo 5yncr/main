@@ -1,9 +1,9 @@
 #!/usr/bin/env python
+import argparse
 import base64
 import datetime
 import os
 import socket
-import sys
 from collections import defaultdict
 from socket import SHUT_RDWR
 
@@ -65,6 +65,7 @@ def handle_request(conn, request):
 def retrieve_drop_info(conn, request):
     """
     Retrieves all current info related to a drop id.
+
     :param conn: TCP socket connection between server and client.
     :param request: request as received
     :return: list of node ip port tuples without timestamps to the client.
@@ -106,6 +107,7 @@ def trim_expired_tuples(key):
     """
     Removes all expired tuples (i.e. tuples that have existed
     for longer than five minutes) from the list of the key.
+
     :param key: The drop id associated with the tuple list.
     :return: A list of tuples that have existed for less than five minutes.
     """
@@ -119,6 +121,7 @@ def trim_expired_tuples(key):
 def retrieve_public_key(conn, request):
     """
     Retrieves the public key paired with the inputted node id.
+
     :param conn: TCP socket connection between server and client
     :param request: request dict as recieved
     :return: Message is sent to client with public key, if available
@@ -161,16 +164,15 @@ def retrieve_public_key(conn, request):
 def request_post_node_id(conn, request):
     """
     Adds the pubkey to disk if it is a legal pairing
+
     :param conn: TCP socket connection between server and client
     :param request: request as received with assumed structure of
-            Tracker request structure
-            {
-                'request_type': int,
-                'drop_id' or 'node_id': appropriate sized id,
-                'data': public 4096 key
-                or tuple [node_id, ip, port]
-            }
-    :return:
+        Tracker request structure
+        { \
+            'request_type': int, \
+            'drop_id' or 'node_id': appropriate sized id, \
+            'data': public 4096 key or tuple [node_id, ip, port], \
+        }
     """
     if not ('node_id' in request):
         send_server_response(
@@ -200,14 +202,14 @@ def request_post_node_id(conn, request):
 def add_node_key_pairing(request):
     """
     Adds pubkey to disk
+
     :param request: request as received with assumed structure of
-            Tracker request structure
-            {
-                'request_type': TRACKER_REQUEST_POST_KEY,
-                'node_id': appropriate sized id,
-                'data': public 4096 key
-            }
-    :return:
+        Tracker request structure
+        { \
+            'request_type': TRACKER_REQUEST_POST_KEY, \
+            'node_id': appropriate sized id, \
+            'data': public 4096 key, \
+        }
     """
     if not os.path.exists('pub_keys/'):
         os.makedirs('pub_keys/')
@@ -221,6 +223,7 @@ def add_node_key_pairing(request):
 def verify_size(key, size):
     """
     Simple abstraction over checking key sizes
+
     :param key: byte[] - node or drop id
     :param size: int - constant value for given sizes
     :return: boolean - whether the size matches
@@ -231,15 +234,15 @@ def verify_size(key, size):
 def request_post_drop_id(conn, request):
     """
     Adds node, ip, port tuples to appropriate drops in hashmap
+
     :param conn: TCP socket connection between server and client
     :param request: request as received with assumed structure of
-            Tracker request structure
-            {
-                'request_type': TRACKER_REQUEST_POST_PEER,
-                'node_id': appropriate sized id,
-                'data': public [node_id, ip, port]
-            }
-    :return:
+        Tracker request structure
+        { \
+            'request_type': TRACKER_REQUEST_POST_PEER, \
+            'node_id': appropriate sized id, \
+            'data': public [node_id, ip, port], \
+        }
     """
     if not ('drop_id' in request):
         send_server_response(
@@ -286,6 +289,7 @@ def add_to_drop_availability(drop_id, data):
 def generate_node_key_file_name(node_id):
     """
     Takes a node key provides where it's public key is stored
+
     :param node_id:
     :return: public key file
     """
@@ -299,11 +303,11 @@ def generate_node_key_file_name(node_id):
 def send_server_response(conn, result, msg, data=''):
     """
     Sends a dict as a server response with the result and msg
+
     :param conn: TCP socket connection between server and client
     :param result: 'OK' | 'ERROR'
     :param msg: text of what happened
     :param data: Data to be sent back to the user.
-    :return:
     """
     conn.send(bencode.encode({
         'result': result,
@@ -313,14 +317,31 @@ def send_server_response(conn, result, msg, data=''):
     conn.shutdown(SHUT_RDWR)
 
 
+def parser():
+    parser = argparse.ArgumentParser(
+        description="Run a tracker",
+    )
+    parser.add_argument(
+        "ip",
+        type=str,
+        help="IP to bind to",
+    )
+    parser.add_argument(
+        "port",
+        type=int,
+        help="Port to bind to",
+    )
+    return parser
+
+
 def main():
     """
     Runs the server loop taking in GET and POST requests and handling them
     accordingly
-    :return:
     """
-    tcp_ip = sys.argv[1]
-    tcp_port = sys.argv[2]
+    args = parser().parse_args()
+    tcp_ip = args.ip
+    tcp_port = args.port
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((tcp_ip, int(tcp_port)))

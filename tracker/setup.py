@@ -1,13 +1,29 @@
-from distutils.core import setup
+from setuptools import find_packages
+from setuptools import setup
 
 setup(
-    name='5yncr Tracker',
+    name='5yncr-Tracker',
     version='0.0.1',
-    packages=['syncr_tracker', ],
+    packages=find_packages(),
     license='AGPLv3',
+    author="Matthew Bentley, Brett Johnson, David Lance, "
+    "Jack LaRue, Alexander Tryjankowski",
+    author_email="syncr@mtb.wtf",
+    description="5yncr is a peer to peer file sync app",
+    url="https://github.com/5yncr/",
+    project_urls={
+        "Bug Tracker": "https://github.com/5yncr/main/issues",
+        "Documentation": "https://syncr.readthedocs.io",
+        "Source Code": "https://github.com/5yncr",
+    },
     scripts=[
         'syncr_tracker/tracker.py',
     ],
+    entry_poinst={
+        'console_scripts': [
+            'tracker = syncr_tracker.tracker:main',
+        ],
+    },
     install_requires=[
         "5yncr_Backend==0.0.1",
         "asn1crypto==0.24.0",
@@ -39,6 +55,6 @@ setup(
         "virtualenv==15.1.0",
     ],
     dependency_links=[
-        'git+https://github.com/5yncr/backend.git@master#egg=5yncr_Backend-0.0.1',
+        'git+https://github.com/5yncr/backend.git@master#egg=5yncr_Backend-0.0.1',  # noqa
     ],
 )
