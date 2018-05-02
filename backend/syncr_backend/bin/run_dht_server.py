@@ -6,8 +6,10 @@ from typing import List  # NOQA
 from syncr_backend.external_interface.dht_util import initialize_dht
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run just a dht server, to be a standalone dht node",
+    )
 
     parser.add_argument(
         "port",
@@ -23,7 +25,11 @@ def main() -> None:
             'Usage: --bootstrap-peers ip:port,ip2:port2,...'
         ),
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     iplist = []  # type: List[str]
     portlist = []  # type: List[int]

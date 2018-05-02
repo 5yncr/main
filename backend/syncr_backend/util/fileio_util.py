@@ -34,6 +34,7 @@ async def load_config_file() -> Dict[str, Any]:
     """
     Read and parse the Drop Peer Store config
 
+    :raises MissingConfigError: If the dps config cannot be found
     :return: Parsed dict of config file contents
     """
     init_directory = get_full_init_directory(None)
@@ -67,6 +68,8 @@ async def write_chunk(
     :param chunk_hash: the expected hash of contents
     :param chunk_size: (optional) override the chunk size, used to calculate \
     the position in the file
+    :raises crypto_util.VerificationException: When the hash of the provided \
+            bytes does not match the provided hash
     :return: None
     """
     if is_complete(filepath):
@@ -109,6 +112,8 @@ async def read_chunk(
     :param position: where to read from
     :param file_hash: if provided, will check the file hash
     :param chunk_size: (optional) override the chunk size
+    :raises crypto_util.VerificationException: If the hash of the bytes read \
+            does not match the provided hash
     :return: a double of (contents, hash), both bytes
     """
     if not is_complete(filepath):
@@ -185,6 +190,7 @@ def is_complete(filepath: str) -> bool:
     Raises FileNotFoundError if neither exists
 
     :param filepath: The path to check for completion
+    :raises FileNotFoundError: If neither the file nor .part file is found
     :return: Whether the file is downloaded, based on its extension
     """
     unfinished_path = filepath + DEFAULT_INCOMPLETE_EXT

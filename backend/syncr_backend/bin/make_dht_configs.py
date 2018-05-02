@@ -13,8 +13,10 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Make configs to use the DHT",
+    )
     parser.add_argument(
         "listenport",
         type=int,
@@ -29,7 +31,11 @@ def main() -> None:
             'Usage: --bootstrap-peers ip:port,ip2:port2,...'
         ),
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     iplist = []  # type: List[str]
     portlist = []  # type: List[int]

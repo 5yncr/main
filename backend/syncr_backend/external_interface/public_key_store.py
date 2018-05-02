@@ -31,6 +31,10 @@ async def get_public_key_store(node_id: bytes) -> "PublicKeyStore":
     Provides a PublicKeyStore either by means of DHT or tracker depending
     on config file
 
+    :param node_id: This node's node id
+    :raises UnsupportedOptionError: If the config specifies an unknown DPS type
+    :raises IncompleteConfigError: If the config does not have the necessary \
+            values
     :return: PublicKeyStore
     """
     config_file = await load_config_file()
@@ -64,12 +68,24 @@ class PublicKeyStore(ABC):
 
     @abstractmethod
     async def set_key(self, key: bytes) -> bool:
+        """
+        Add a key to the PKS
+
+        :param key: The key
+        :return: bool of whether it was successful
+        """
         pass
 
     @abstractmethod
     async def request_key(
         self, request_node_id: bytes,
     ) -> Tuple[bool, Optional[str]]:
+        """
+        Request a key from the PKS
+
+        :param request_node_id: The node id to look up
+        :return: A tuple of success and a key string
+        """
         pass
 
 

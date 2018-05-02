@@ -63,6 +63,9 @@ async def get_drop_peer_store(node_id: bytes) -> "DropPeerStore":
     on config file
 
     :param node_id: bytes of the node id for this node
+    :raises UnsupportedOptionError: If the config specifies an unknown DPS type
+    :raises IncompleteConfigError: If the config does not have the necessary \
+            values
     :return: DropPeerStore
     """
     config_file = await load_config_file()
@@ -95,12 +98,26 @@ class DropPeerStore(ABC):
 
     @abstractmethod
     async def add_drop_peer(self, drop_id: bytes, ip: str, port: int) -> bool:
+        """
+        Add a drop/node mapping the the DPS
+
+        :param drop_id: Drop to send
+        :param ip: IP of this node
+        :param port: Port of this node
+        :return: bool of whether the action was successful
+        """
         pass
 
     @abstractmethod
     async def request_peers(
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
+        """
+        Get the peers associated with a drop
+
+        :param drop_id: Drop to get peers for
+        :return: Tuple of whether the action was succesful, and a list of peers
+        """
         pass
 
 
@@ -128,6 +145,7 @@ class DHTPeerStore(DropPeerStore):
         :param drop_id: drop_id entry to update
         :param ip: ip to recieve requests regarging drop on
         :param port: port to recieve requests regarging drop on
+        :return: Whether the action was successful
         """
         logger.debug("addingdrop peers %s %s %s", drop_id, ip, port)
 
@@ -143,7 +161,12 @@ class DHTPeerStore(DropPeerStore):
     async def request_peers(
         self, drop_id: bytes,
     ) -> Tuple[bool, List[Tuple[bytes, str, int]]]:
+        """
+        Get an entry from the dht
 
+        :param drop_id: The drop to look up
+        :return: A tuple of success and list of peers
+        """
         logger.debug("requesting drop peers %s", drop_id)
         # result is bytes representation of frozen set of peers
         result = await self.node_instance.get(drop_id)

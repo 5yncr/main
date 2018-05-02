@@ -4,8 +4,11 @@ import argparse
 from syncr_backend.init import node_init
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Initialize a node by creating necessary keys and config "
+        "directories.  Only needs to be run once.",
+    )
     parser.add_argument(
         "--force",
         action="store_true",
@@ -16,7 +19,11 @@ def main() -> None:
         type=str,
         help="Directory to initialize in",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     if args.directory is not None:
         kwargs = {'init_directory': args.directory}

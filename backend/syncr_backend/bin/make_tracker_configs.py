@@ -8,8 +8,10 @@ from syncr_backend.constants import DEFAULT_PKS_CONFIG_FILE
 from syncr_backend.init.node_init import get_full_init_directory
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Make configs to use a tracker",
+    )
     parser.add_argument(
         "ip",
         type=str,
@@ -20,7 +22,11 @@ def main() -> None:
         type=int,
         help='Port of the Tracker',
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     config = {
         'type': 'tracker',

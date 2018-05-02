@@ -6,8 +6,11 @@ from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Download a drop.  Does not run the backend to listen for "
+        "incomming requests, only sends outgoing requests",
+    )
     parser.add_argument(
         "drop_id",
         type=str,
@@ -18,7 +21,11 @@ def main() -> None:
         type=str,
         help="Directory to save the drop to",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     loop = asyncio.get_event_loop()
 

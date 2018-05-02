@@ -22,8 +22,7 @@ def get_dht() -> Server:
     """
     returns the node_instance of the dht
 
-    Throws TypeError if DHT has not been initialized
-
+    :raises TypeError: when the DHT has not been initialized
     :return: The DHT Server
     """
     global _node_instance

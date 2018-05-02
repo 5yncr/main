@@ -47,7 +47,11 @@ class FileMetadata(object):
 
     @property
     def log(self) -> logging.Logger:
-        """A logger for this object"""
+        """
+        A logger for this object
+
+        :return: a logger object for this class
+        """
         if self._log is None:
             self._log = get_logger(
                 '.'.join([
@@ -199,7 +203,11 @@ class FileMetadata(object):
 
     @property
     async def percent_done(self) -> float:
-        """How done the file is, in range [0,1]"""
+        """
+        How done the file is, in range [0,1]
+
+        :return: The percent done, in range [0,1]
+        """
         if self.num_chunks == 0:
             return 1.0
         return len(await self.downloaded_chunks) / self.num_chunks
@@ -216,6 +224,7 @@ class FileMetadata(object):
         """
         Overwriting equals method so that it returns True if they have
         the same hash and size and filename
+
         :param self: FileMetadata of a given file
         :param other: another object
         :return: Boolean based on the above fact
@@ -295,7 +304,7 @@ async def get_file_metadata_from_drop_id(
 
     :param drop_id: bytes for the drop_id that the file is part of
     :param file_id: bytes for the file_id of desired file_name
-    :return Optional[FileMetadata] of the given file
+    :return: Optional[FileMetadata] of the given file
     """
     drop_location = await drop_metadata.get_drop_location(drop_id)
     file_metadata_location = os.path.join(

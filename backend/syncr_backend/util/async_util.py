@@ -22,6 +22,26 @@ async def limit_gather(fs, n, task_timeout=0):
     Useful a large list of tasks need to be completed, but running too many may
     cause side effects (ie, sockets timing out).
 
+    >>> from syncr_backend.util.async_util import limit_gather
+    >>> import asyncio
+    >>>
+    >>> async def coro(n: int) -> None:
+    ...     await asyncio.sleep(n)
+    ...     print("done sleeping for %s seconds" % n)
+    ...     return n
+    >>>
+    >>> loop = asyncio.get_event_loop()
+    >>> coros = [coro(5), coro(3), coro(1), coro(2), coro(4)]
+    >>> results = loop.run_until_complete(limit_gather(coros, 3))
+    done sleeping for 1 seconds
+    done sleeping for 3 seconds
+    done sleeping for 2 seconds
+    done sleeping for 5 seconds
+    done sleeping for 4 seconds
+    >>> print(results)
+    [5, 3, 1, 2, 4]
+
+
     :param fs: A list of awaitable objects to run
     :param n: The maximum number to allow to be pending at a time
     :param task_timeout: Give each task this long before trying the next
@@ -57,6 +77,35 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
     returns, everything from done_queue has been processed, and there is
     nothing left to add.
 
+    >>> from syncr_backend.util.async_util import process_queue_with_limit
+    >>> import asyncio
+    >>>
+    >>> async def coro(n: int) -> None:
+    ...     await asyncio.sleep(n)
+    ...     return n*n
+    >>>
+    >>> in_queue = asyncio.Queue()
+    >>> out_queue = asyncio.Queue()
+    >>>
+    >>> loop = asyncio.get_event_loop()
+    >>> processor = asyncio.ensure_future(
+    ...     process_queue_with_limit(in_queue, 3, out_queue),
+    ... )
+    >>>
+    >>> for n in [1, 2, 3, 4]:
+    ...     loop.run_until_complete(in_queue.put(coro(n)))
+    >>>
+    >>> loop.run_until_complete(in_queue.join())
+    >>> r = []
+    >>> while not out_queue.empty():
+    ...     result = loop.run_until_complete(out_queue.get())
+    ...     r.append(result)
+    >>>
+    >>> r
+    [1, 4, 9, 16]
+    >>> processor.cancel()
+    True
+
     :param queue: The queue of input tasks
     :param n: The max number of pending tasks at a time
     :param done_queue: Queue to add results to
@@ -83,12 +132,13 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
             )
 
 
+#: Cache info for async_cache
 CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 
 def async_cache(maxsize=128, cache_obj=None, cache_none=False, **kwargs):
     """
-    Make a decorator that caches function calls
+    Make a decorator that caches async function calls
 
     :param maxsize: The maximum cache size
     :param cache_obj: Override the default LRU cache

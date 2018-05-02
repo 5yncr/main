@@ -1,18 +1,21 @@
-from distutils.core import setup
+from setuptools import find_packages
+from setuptools import setup
 
 setup(
-    name='5yncr Backend',
+    name='5yncr-Backend',
     version='0.0.1',
-    packages=[
-        'syncr_backend',
-        'syncr_backend.bin',
-        'syncr_backend.util',
-        'syncr_backend.metadata',
-        'syncr_backend.network',
-        'syncr_backend.init',
-        'syncr_backend.external_interface',
-    ],
+    packages=find_packages(),
     license='AGPLv3',
+    author="Matthew Bentley, Brett Johnson, David Lance, "
+        "Jack LaRue, Alexander Tryjankowski",
+    author_email="syncr@mtb.wtf",
+    description="5yncr is a peer to peer file sync app",
+    url="https://github.com/5yncr/",
+    project_urls={
+        "Bug Tracker": "https://github.com/5yncr/main/issues",
+        "Documentation": "https://syncr.readthedocs.io",
+        "Source Code": "https://github.com/5yncr",
+    },
     entry_points={
         'console_scripts': [
             'check_drop = syncr_backend.bin.check_drop:main',

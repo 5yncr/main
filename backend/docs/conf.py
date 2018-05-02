@@ -15,19 +15,24 @@
 # -- Project information -----------------------------------------------------
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+import time
+from distutils.core import run_setup
 
-project = '5yncr'
-copyright = '''2018, Matthew Bentley, Brett Johnson, David Lance,
-Jack LaRue, Alexander Tryjankowski'''
+sys.path.insert(0, os.path.abspath('..'))
+sys.setrecursionlimit(1500)
 
-author = '''Matthew Bentley, Brett Johnson, David Lance,
-Jack LaRue, Alexander Tryjankowski'''
+SETUP = os.path.join(os.path.dirname(__file__), '..', 'setup.py')
+
+distribution = run_setup(SETUP, stop_after='init')
+
+project = distribution.get_name()
+author = distribution.get_author()
+copyright = "%s, %s" % (time.strftime('%Y'), author)
 
 # The short X.Y version
-version = ''
+release = version = distribution.get_version()
 # The full version, including alpha/beta/rc tags
-release = ''
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,6 +48,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinx.ext.doctest',
+    'rinoh.frontend.sphinx',
+    'sphinxcontrib.autoprogram',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -51,11 +59,9 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_parsers = {
-    '.md': 'recommonmark.parser.CommonMarkParser',
-}
-source_suffix = ['.rst', '.md']
-# source_suffix = '.rst'
+source_parsers = {}
+# source_suffix = ['.rst', '.md']
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -79,13 +85,13 @@ pygments_style = 'sphinx'
 # -- Options for HTML output -------------------------------------------------
 
 html_theme_options = {
-    'canonical_url': '',
+    'canonical_url': 'https://syncr.readthedocs.io',
     'analytics_id': '',
     'logo_only': False,
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
+    'style_external_links': True,
+    'vcs_pageview_mode': 'blob',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,
@@ -130,11 +136,11 @@ htmlhelp_basename = '5yncrdoc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    # 'pointsize': '10pt',
+    'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
@@ -150,11 +156,12 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (
-        master_doc, '5yncr.tex', '5yncr Documentation',
-        'Matthew Bentley, Brett Johnson, David Lance, Jack LaRue, Alexander Tryjankowski', 'manual',
+        master_doc, 'syncr.tex', 'syncr Documentation', author, 'howto',
+        False,
     ),
 ]
 
+rinoh_template = 'article'
 
 # -- Options for manual page output ------------------------------------------
 
@@ -187,4 +194,20 @@ texinfo_documents = [
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+
+frontend_branch = os.environ.get('FRONTEND_BRANCH') or 'latest'
+tracker_branch = os.environ.get('TRACKER_BRANCH') or 'latest'
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/', None),
+    'frontend': (
+        'https://syncr.readthedocs.io/projects/frontend/en/%s/'
+        % frontend_branch,
+        None,
+    ),
+    'tracker': (
+        'https://syncr.readthedocs.io/projects/tracker/en/%s/'
+        % tracker_branch,
+        None,
+    ),
+}

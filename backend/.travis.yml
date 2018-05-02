@@ -4,7 +4,7 @@ services:
 python:
     - "3.6"
 env:
-    - TOXENV=lint,py3,coverage,mypy,docs
+    - TOXENV=lint,py3,coverage,mypy,docs,doctest
     - TOXENV=itests_simple
     - TOXENV=itests_complex
     - TOXENV=itests_dht

@@ -4,16 +4,15 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = 5yncr
-SOURCEDIR     = source
-BUILDDIR      = build
+SPHINXPROJ    = syncr
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 api-doc:
-	bash -c "sphinx-apidoc -o source/ ../syncr_backend/ -f"
+	bash -c "sphinx-apidoc -M -T -e -f --implicit-namespaces -o ./generated ../syncr_backend/ ../syncr_backend/bin/"
 
 .PHONY: help Makefile
 

@@ -65,6 +65,7 @@ def initialize_node(init_directory: Optional[str]=None) -> None:
 
     :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :raises FileExistsError: If the init directory already exists
     """
     full_directory = get_full_init_directory(init_directory)
     logger.info("initializing node in %s", full_directory)
@@ -101,12 +102,13 @@ def write_private_key_to_disk(
 
     :param init_directory: directory where node files are stored \
     init_directory of none uses ~/.{DEFAULT_INIT_DIR}
+    :raises FileExistsError: If a private key already exists
     """
     logger.debug("writing private key")
     full_directory = get_full_init_directory(init_directory)
 
-    if os.path.exists(os.path.join(full_directory, "private_key.pem")):
-        raise FileExistsError
+    if os.path.isfile(os.path.join(full_directory, "private_key.pem")):
+        raise FileExistsError()
 
     with open(
         os.path.join(full_directory, "private_key.pem"),

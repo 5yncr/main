@@ -6,14 +6,21 @@ import sys
 from syncr_backend.init import drop_init
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Initialize a drop by creating the necessary metadata "
+        "files and storing metadata in the central config dir.",
+    )
     parser.add_argument(
         "directory",
         type=str,
         help="Directory to create a drop from",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    args = parser().parse_args()
 
     loop = asyncio.get_event_loop()
     id = loop.run_until_complete(drop_init.initialize_drop(args.directory))

@@ -41,6 +41,7 @@ async def do_request(
     some number of kwargs
     :param peers: A list of peers to try to talk to
     :param fun_args: The arguments to pass to request_fun for each peer
+    :raises network_util.NoPeersException: If no peers are provided
     :return: The result of a successful call to request_fun
     """
     result = None

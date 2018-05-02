@@ -20,15 +20,22 @@ def main() -> None:
     loop.run_until_complete(a_main())
 
 
-async def a_main() -> None:
-    """Lots to await on, so call this whole function in a run_until_complete"""
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Check the contents of a drop, returning status 0 if all "
+        "the files are downloaded and correct, 1 otherwise (with a message).",
+    )
     parser.add_argument(
         "drop_id",
         type=str,
         help="b64 encoded Drop ID",
     )
-    args = parser.parse_args()
+    return parser
+
+
+async def a_main() -> None:
+    """Lots to await on, so call this whole function in a run_until_complete"""
+    args = parser().parse_args()
 
     id_prefix = b'dropid:'
 

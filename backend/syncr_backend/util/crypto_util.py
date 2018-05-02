@@ -33,6 +33,12 @@ class VerificationException(Exception):
 async def hash(b: bytes) -> bytes:
     """Default hash function
 
+    >>> from syncr_backend.util.crypto_util import hash, b64encode
+    >>> import asyncio
+    >>> loop = asyncio.get_event_loop()
+    >>> b64encode(loop.run_until_complete(hash(b"foo")))
+    b'LCa0a2j-xo-5m0U8HTBBNBNCLXBkg7+g+YpeiGJm564='
+
     :param b: The bytes to hash
     :return: The hash of b
     """
@@ -47,6 +53,12 @@ def _hash(b: bytes) -> bytes:
 
 async def hash_dict(d: Dict[str, Any]) -> bytes:
     """Hash a dictionary, by first bencoding it
+
+    >>> from syncr_backend.util.crypto_util import hash_dict, b64encode
+    >>> import asyncio
+    >>> loop = asyncio.get_event_loop()
+    >>> b64encode(loop.run_until_complete(hash_dict({'key': b"foo"})))
+    b'gqcj3O1NwwlHhSJFHUi3eiJ5++9Pom-aIqN1QRPdLRo='
 
     :param b: The dictionary to hash
     :return: The hash of bencode(b)
@@ -66,6 +78,14 @@ def b64encode(b: bytes) -> bytes:
 
 def b64decode(b: bytes) -> bytes:
     """Decode a b64 sequence back into binary
+
+    >>> from syncr_backend.util.crypto_util import b64encode, b64decode
+    >>> data = b'IamImportantData'
+    >>> encoded_data = b64encode(data)
+    >>> encoded_data
+    b'SWFtSW1wb3J0YW50RGF0YQ=='
+    >>> b64decode(encoded_data)
+    b'IamImportantData'
 
     :param b: The encoded sequence
     :return: The decoded bytes
@@ -92,6 +112,15 @@ def decode_peerlist(rawpl: bytes) -> Optional[List[Any]]:
     """
     decodes peerlist from bytes representation to list
 
+    >>> from syncr_backend.util.crypto_util import encode_peerlist
+    >>> from syncr_backend.util.crypto_util import decode_peerlist
+    >>> peers = [('foo', '1.2.3.4', 2), ('bar', '2.3.4.5', 3)]
+    >>> encoded_peers = encode_peerlist(peers)
+    >>> encoded_peers
+    b'type:peerlistll3:foo7:1.2.3.4i2eel3:bar7:2.3.4.5i3eee'
+    >>> decode_peerlist(encoded_peers)
+    [('foo', '1.2.3.4', 2), ('bar', '2.3.4.5', 3)]
+
     :param rawpl: bytes form of peerlist
     :return: A list of peers, or None
     """
@@ -117,6 +146,10 @@ def random_bytes() -> bytes:
 
 def random_int() -> int:
     """Generate a random integer
+
+    >>> from syncr_backend.util.crypto_util import random_int
+    >>> random_int()  # doctest: +SKIP
+    11520214175276372604
 
     :returns: a random 64 bit int
     """
@@ -235,6 +268,7 @@ async def verify_signed_dictionary(
     :param public_key: RSA public_key
     :param signature: the signature of the dictionary
     :param dictionary: the actual dictionary
+    :raises VerificationException: If the verification fails
     :return: None
     """
     verifier = public_key.verifier(

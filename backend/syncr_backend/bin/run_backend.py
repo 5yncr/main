@@ -19,11 +19,11 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-def run_backend() -> None:
-    """
-    Runs the backend
-    """
-    input_args_parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    input_args_parser = argparse.ArgumentParser(
+        description="Run the backend, listening for incomming requests and "
+        "periodically making necessary outgoing requests",
+    )
     input_args_parser.add_argument(
         "ip",
         type=str,
@@ -57,7 +57,14 @@ def run_backend() -> None:
         type=str,
         help="Command file to send debug commands",
     )
-    arguments = input_args_parser.parse_args()
+    return input_args_parser
+
+
+def run_backend() -> None:
+    """
+    Runs the backend
+    """
+    arguments = parser().parse_args()
     if arguments.external_address is not None:
         ext_addr = arguments.external_address
     else:

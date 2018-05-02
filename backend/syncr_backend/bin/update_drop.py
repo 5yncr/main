@@ -6,8 +6,12 @@ from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Update a drop from changes on the filesystem. Must be "
+        "the owner of the drop to run this. One of save dir and drop id "
+        "should be provided.",
+    )
     parser.add_argument(
         "--save_dir",
         type=str,
@@ -20,8 +24,11 @@ def main() -> None:
         required=False,
         help="Drop ID to update",
     )
+    return parser
 
-    args = parser.parse_args()
+
+def main() -> None:
+    args = parser().parse_args()
     loop = asyncio.get_event_loop()
 
     if not (args.drop_id or args.save_dir):
