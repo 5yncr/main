@@ -252,11 +252,11 @@ async def _handle_selected_drop(
                 }
 
             new_metadata, new_version_available = \
-                await check_for_update(request['drop_id'])
+                await check_for_update(drop_id)
             remote_pending_changes = {}  # type: Dict[str, List[str]]
             if new_version_available:
                 remote_update_status = await find_changes_in_new_version(
-                    request['drop_id'], new_metadata,
+                    drop_id, new_metadata,
                 )
                 if remote_update_status is not None:
                     remote_pending_changes = {
@@ -530,7 +530,7 @@ async def handle_unsubscribe(
                 'error': ERR_INVINPUT,
             }
         else:
-            await drop_metadata.unsubscribe()
+            drop_metadata.unsubscribe()
             response = {
                 'status': 'ok',
                 'result': 'success',

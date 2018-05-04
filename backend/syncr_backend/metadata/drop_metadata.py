@@ -206,7 +206,7 @@ class DropMetadata(object):
         self.log.error("tried to lookup a file that doesn't exist")
         raise FileNotFoundError()
 
-    async def unsubscribe(self) -> None:
+    def unsubscribe(self) -> None:
         """Removes the refrence in the .5yncr folder therefore preventing
         future updates
 
@@ -215,6 +215,7 @@ class DropMetadata(object):
         save_path = _get_save_path()
         encoded_drop_id = crypto_util.b64encode(self.id).decode('utf-8')
         drop_loc_file = os.path.join(save_path, encoded_drop_id)
+        logger.info("removing file: ", drop_loc_file)
         os.remove(drop_loc_file)
 
     async def delete(self) -> None:
