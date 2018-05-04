@@ -210,4 +210,8 @@ intersphinx_mapping = {
         % tracker_branch,
         None,
     ),
+    'kademlia': (
+        'https://kademlia.readthedocs.io/en/latest/',
+        None,
+    ),
 }

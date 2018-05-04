@@ -31,7 +31,7 @@ def main() -> None:
 
     id = crypto_util.b64decode(args.drop_id.encode('utf-8'))
 
-    done = loop.run_until_complete(drop_util.sync_drop(id, args.directory))
+    done, _ = loop.run_until_complete(drop_util.sync_drop(id, args.directory))
 
     if done:
         print("Drop successfully synced")

@@ -99,6 +99,9 @@ def run_backend() -> None:
     dps_send = loop.create_task(
         send_drops_to_dps(ext_addr, ext_port, shutdown_flag),
     )
+    sync_processor = loop.create_task(
+        drop_util.process_sync_queue(),
+    )
 
     if not arguments.backendonly:
         if arguments.debug_commands is None:
@@ -116,6 +119,7 @@ def run_backend() -> None:
         listen_server.close()
         frontend_server.close()
         dps_send.cancel()
+        sync_processor.cancel()
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.stop()
         loop.close()
@@ -166,10 +170,10 @@ def execute_function(
     elif function_name == "drop_init":
         drop_init.initialize_drop(args[0])
 
-    elif function_name == "drop_update":
+    elif function_name == "make_new_version":
         drop_id = crypto_util.b64decode(args[0].encode())
         task = asyncio.run_coroutine_threadsafe(
-            drop_util.update_drop(drop_id),
+            drop_util.make_new_version(drop_id),
             loop,
         )
         task.result()

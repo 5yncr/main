@@ -50,6 +50,21 @@ class DropVersion(object):
     def __str__(self) -> str:
         return "%s_%s" % (self.version, self.nonce)
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, DropVersion):
+            return self.version == other.version and self.nonce == other.nonce
+        return False
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, DropVersion):
+            raise TypeError(other)
+        return self.version < other.version
+
+    def __le__(self, other: object) -> bool:
+        if not isinstance(other, DropVersion):
+            raise TypeError(other)
+        return self.version <= other.version
+
 
 class DropMetadata(object):
     """Representation of a drop's metadata file"""

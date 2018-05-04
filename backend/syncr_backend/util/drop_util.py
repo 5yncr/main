@@ -1,6 +1,7 @@
 import asyncio
 import os
 import shutil
+from collections import defaultdict
 from random import shuffle
 from typing import AsyncIterator
 from typing import Awaitable  # noqa
@@ -44,17 +45,31 @@ from syncr_backend.util.log_util import get_logger
 logger = get_logger(__name__)
 
 
-async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
+#: Put a lock around syncing each drop, so sync_drop can be called multiple
+#: times per drop_id, and only one will run at a time
+sync_locks = defaultdict(asyncio.Lock)  # type: Dict[bytes, asyncio.Lock]
+
+
+async def sync_drop(
+    drop_id: bytes, save_dir: str, version: Optional[DropVersion]=None,
+) -> Tuple[bool, bytes]:
     """
     Syncs a drop id from remote peers
 
     :param drop_id: id of drop to sync
     :param save_dir: directory to save drop
-    :return: true if syncing finished, false otherwise
+    :param version: optional version to sync, otherwise will use the version \
+            on the filesystem or find the most recent one
+    :return: a tuple of true if syncing finished and the drop_id
     """
+    lock = sync_locks[drop_id]
+    await lock.acquire()
+
     drop_peers = await get_drop_peers(drop_id)
     await start_drop_from_id(drop_id, save_dir)
-    drop_metadata = await get_drop_metadata(drop_id, drop_peers, save_dir)
+    drop_metadata = await get_drop_metadata(
+        drop_id, drop_peers, save_dir, version,
+    )
 
     file_results = await async_util.limit_gather(
         fs=[
@@ -70,8 +85,9 @@ async def sync_drop(drop_id: bytes, save_dir: str) -> bool:
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
+    lock.release()
 
-    return all(file_results)
+    return all(file_results), drop_id
 
 
 T = TypeVar('T')
@@ -135,7 +151,110 @@ class PermissionError(Exception):
     pass
 
 
-async def update_drop(
+async def check_for_update(
+    drop_id: bytes,
+) -> Tuple[DropMetadata, bool]:
+    """
+    Check for drop updates from the network
+
+    :param drop_id: Drop to check
+    :raises VerificationException: If there are multiple conflicting versions \
+            in the network
+    :return: A tuple of the most recent drop metadata and whether there is an \
+            update
+    """
+    drop_directory = await get_drop_location(drop_id)
+    old_drop_m = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=os.path.join(
+            drop_directory, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
+    if old_drop_m is None:
+        old_v = DropVersion(0, 0)
+    else:
+        old_v = old_drop_m.version
+
+    peers = await get_drop_peers(drop_id)
+    args = {
+        'drop_id': drop_id,
+        'drop_version': None,
+    }
+    metadata = await send_requests.do_request(
+        request_fun=send_requests.send_drop_metadata_request,
+        peers=peers,
+        fun_args=args,
+    )
+    new_v = metadata.version
+
+    if old_v == new_v:
+        return (metadata, False)
+
+    # equal versions but not nonces
+    if new_v.version == old_v.version:
+        # TODO: handle conflicts here
+        raise VerificationException(
+            "Found version with same version but difference nonce", new_v,
+            old_v,
+        )
+
+    if new_v > old_v:
+        return (metadata, True)
+
+    # TODO: else send a new version exists request
+    # TODO: also check previous versions' nonce to check for conflicts
+    return (metadata, False)
+
+
+_sync_in_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[Tuple[bool, bytes]]]  # noqa
+
+
+async def queue_sync(
+    drop_id: bytes, save_dir: str, version: Optional[DropVersion]=None,
+) -> None:
+    """
+    Queue a drop to be synced.  This will just put it in the sync queue that is
+    run by ``process_sync_queue``
+
+    :param drop_id: The drop id
+    :param save_dir: The drop's save directory
+    :param version: Optional version, to download that version
+    """
+    global _sync_in_queue
+
+    coro = sync_drop(drop_id, save_dir, version)
+    await _sync_in_queue.put(coro)
+
+
+async def process_sync_queue() -> None:
+    """
+    Loop to process the sync queue.  Starts a ``process_queue_with_limit``
+    coroutine, checks the out queue, and re-runs unfinished out queue items
+    """
+    global _sync_in_queue
+
+    sync_out_queue = asyncio.Queue()  # type: asyncio.Queue[Tuple[bool, bytes]]
+
+    processor = asyncio.ensure_future(
+        async_util.process_queue_with_limit(
+            _sync_in_queue, 4, sync_out_queue,
+        ),
+    )
+    try:
+        while True:
+            done, drop_id = await sync_out_queue.get()
+
+            if not done:
+                # TODO: add exponential backoff for failures
+                drop_directory = await get_drop_location(drop_id)
+                coro = sync_drop(drop_id, drop_directory)
+                await _sync_in_queue.put(coro)
+    except asyncio.CancelledError:
+        processor.cancel()
+        return
+
+
+async def make_new_version(
     drop_id: bytes,
     add_secondary_owner: bytes=None,
     remove_secondary_owner: bytes=None,
@@ -207,6 +326,8 @@ async def update_drop(
         await f_m.write_file(
             os.path.join(drop_directory, DEFAULT_FILE_METADATA_LOCATION),
         )
+
+    DropMetadata.read_file.cache_clear()  # type: ignore
 
 
 async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
@@ -430,7 +551,12 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     drop_location = await get_drop_location(drop_id)
     if drop_location is None:
         return None
-    drop_metadata = await DropMetadata.read_file(drop_id, drop_location)
+    drop_metadata = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=os.path.join(
+            drop_location, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
     if drop_metadata is None:
         return None
 
@@ -439,14 +565,15 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
         drop_location, [],
     ):
         full_name = os.path.join(dirpath, filename)
-        files[full_name] = await make_file_metadata(
+        rel_name = os.path.relpath(full_name, drop_location)
+        files[rel_name] = await make_file_metadata(
             full_name, drop_id,
         )
 
-    changed_files = Set()
-    removed_files = Set()
-    unchanged_files = Set()
-    starting_files = Set(files.keys())
+    changed_files = set()
+    removed_files = set()
+    unchanged_files = set()
+    starting_files = set(files.keys())
 
     for (name, id) in drop_metadata.files.items():
         if name in starting_files:
@@ -457,9 +584,9 @@ async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
                 unchanged_files.add(name)
             else:
                 changed_files.add(name)
+            starting_files.remove(name)
         else:
             removed_files.add(name)  # Add file that no longer exists
-        starting_files.remove(name)
 
     return FileUpdateStatus(
         added=starting_files,

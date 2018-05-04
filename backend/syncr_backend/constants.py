@@ -80,7 +80,7 @@ MAX_CONCURRENT_CHUNK_DOWNLOADS = 8
 # Frontend action types
 # TODO: make an enum
 ACTION_GET_OWNED_SUBSCRIBED_DROPS = 'get_owned_subscribed_drops'
-ACTION_GET_SELECT_DROPS = 'get_selected_drop'
+ACTION_GET_SELECT_DROP = 'get_selected_drop'
 ACTION_INITIALIZE_DROP = 'initialize_drop'
 ACTION_INPUT_DROP_TO_SUBSCRIBE_TO = 'input_drop_to_subscribe'
 ACTION_SHARE_DROP = 'share_drop'
@@ -88,6 +88,8 @@ ACTION_ADD_OWNER = 'add_owner'
 ACTION_REMOVE_OWNER = 'remove_owner'
 ACTION_DELETE_DROP = 'delete_drop'
 ACTION_UNSUBSCRIBE = 'unsubscribe'
+ACTION_NEW_VERSION = 'new_version'
+ACTION_PENDING_CHANGES = 'get_pending_changes'
 
 # Frontend connection settings
 #: TCP address for frontend communication

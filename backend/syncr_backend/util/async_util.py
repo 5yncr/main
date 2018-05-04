@@ -113,23 +113,26 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
     another
     """
     tasks = []
-    while True:
-        task = asyncio.ensure_future(await queue.get())
-        task.add_done_callback(
-            lambda future: done_queue.put_nowait(future.result()),
-        )
-        task.add_done_callback(
-            lambda _: queue.task_done(),
-        )
-        tasks.append(task)
-
-        done, pending = await asyncio.wait(
-            tasks, timeout=task_timeout, return_when=ALL_COMPLETED,
-        )
-        while len(pending) >= n:
-            done, pending = await asyncio.wait(
-                pending, return_when=FIRST_COMPLETED,
+    try:
+        while True:
+            task = asyncio.ensure_future(await queue.get())
+            task.add_done_callback(
+                lambda future: done_queue.put_nowait(future.result()),
             )
+            task.add_done_callback(
+                lambda _: queue.task_done(),
+            )
+            tasks.append(task)
+
+            done, pending = await asyncio.wait(
+                tasks, timeout=task_timeout, return_when=ALL_COMPLETED,
+            )
+            while len(pending) >= n:
+                done, pending = await asyncio.wait(
+                    pending, return_when=FIRST_COMPLETED,
+                )
+    except asyncio.CancelledError:
+        return
 
 
 #: Cache info for async_cache

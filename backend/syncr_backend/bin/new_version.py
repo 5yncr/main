@@ -2,14 +2,15 @@
 import argparse
 import asyncio
 
-from syncr_backend.metadata import drop_metadata
 from syncr_backend.util import crypto_util
 from syncr_backend.util import drop_util
 
 
 def parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Download the latest version for a drop",
+        description="Update a drop from changes on the filesystem. Must be "
+        "the owner of the drop to run this. One of save dir and drop id "
+        "should be provided.",
     )
     parser.add_argument(
         "--save_dir",
@@ -44,27 +45,7 @@ def main() -> None:
         print("Drop ID not found")
         exit(1)
 
-    md, update_avail = loop.run_until_complete(
-        drop_util.check_for_update(drop_id),
-    )
-    if not update_avail:
-        print("No update available, exiting")
-        exit(0)
-
-    drop_dir = loop.run_until_complete(
-        drop_metadata.get_drop_location(drop_id),
-    )
-
-    done, _ = loop.run_until_complete(
-        drop_util.sync_drop(drop_id, drop_dir, md.version),
-    )
-
-    if done:
-        print("updated successfully")
-        exit(0)
-    else:
-        print("did not update succussfully")
-        exit(1)
+    loop.run_until_complete(drop_util.make_new_version(drop_id))
 
 
 if __name__ == '__main__':
