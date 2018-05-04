@@ -15,7 +15,7 @@
 
     <h1 class=drop-type>Subscribed Drops</h1>
     <ul class=drops>
-        {% if drop %}
+        {% if subscribed %}
         {% for drop in subscribed %}
             <li><a href="{{ url_for('show_drops', drop_id=drop.drop_id) }}"><h2 class=drop-name>{{ drop.name|safe }}</h2></a>
         {% else %}
@@ -37,18 +37,18 @@
 {% block toolbar %}
 {% if selected and permission == "owned" %}
   <div class="btn-group">
-    <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
+    <a href="{{ url_for('show_drops', drop_id=selected.drop_id) }}"><button>Reload</button></a>
     {% if new_version %}
-    <a href="{{ url_for('new_version', drop_id=selected.name) }}"><button>New Version</button></a>
+    <a href="{{ url_for('new_version', drop_id=selected.drop_id) }}"><button>New Version</button></a>
     {% endif %}
-    <a href="{{ url_for('share_drop', drop_id=selected.name) }}"><button>Share</button></a>
-    <a href="{{ url_for('view_owners', drop_id=selected.name) }}"><button>Owners</button></a>
-    <a href="{{ url_for('delete_drop', drop_id=selected.name) }}"><button>Delete Drop</button></a>
+    <a href="{{ url_for('share_drop', drop_id=selected.drop_id) }}"><button>Share</button></a>
+    <a href="{{ url_for('view_owners', drop_id=selected.drop_id) }}"><button>Owners</button></a>
+    <a href="{{ url_for('delete_drop', drop_id=selected.drop_id) }}"><button>Delete Drop</button></a>
   </div>
 {% elif selected and permission == "subscribed" %}
   <div class="btn-group">
-      <a href="{{ url_for('show_drops', drop_id=selected.name) }}"><button>Reload</button></a>
-      <a href="{{ url_for('unsubscribe', drop_id=selected.name) }}"><button>Unsubscribe</button></a>
+      <a href="{{ url_for('show_drops', drop_id=selected.drop_id) }}"><button>Reload</button></a>
+      <a href="{{ url_for('unsubscribe', drop_id=selected.drop_id) }}"><button>Unsubscribe</button></a>
   </div>
 {% endif %}
 {% endblock %}
@@ -71,7 +71,7 @@
           <div class=file-action-container>
             <div class=file-action-button-container>
               <div class=file-action-button-container>
-                    <form method="GET" action="{{ url_for('remove_owner', drop_id=selected.name, owner_id=owner) }}">
+                    <form method="GET" action="{{ url_for('remove_owner', drop_id=selected.drop_id, owner_id=owner) }}">
                         <input class=file-action-button type='submit' value='remove' />
                     </form>
                 </div>
@@ -81,7 +81,7 @@
       </tr>
     {% endfor %}
     </table>
-    <form method="GET" action="{{ url_for('add_owner', drop_id=selected.name) }}">
+    <form method="GET" action="{{ url_for('add_owner', drop_id=selected.drop_id) }}">
         Owner ID: <input type='text' name='owner_id' />
         <input class=file-action-button type='submit' value='Add Owner' />
     </form>
@@ -135,7 +135,15 @@
       {% for name, percent in selected.files.items() %}
         <tr class=file-info-row>
           <th class=file-name>{{ name|safe }}</th>
+          <th class=file-status>{{ file_status.get(name)|safe }}</th>
           <th class=file-percent>{{ percent|safe }}%</th>
+        </tr>
+      {% endfor %}
+      {% for name in added %}
+        <tr class=file-info-row>
+          <th class=file-name>{{ name|safe }}</th>
+          <th class=file-status>added</th>
+          <th class=file-percent>0%</th>
         </tr>
       {% endfor %}
     </table>

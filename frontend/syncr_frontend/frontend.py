@@ -91,10 +91,20 @@ def get_selected_drop(drop_id):
 
     drop = response.get('requested_drops')
 
-    if drop is None:
-        return None
-    else:
-        return drop
+    return drop
+
+
+def get_pending_changes(drop_id):
+    message = {
+        'drop_id': drop_id,
+        'action': 'get_pending_changes',
+    }
+
+    response = send_message(message)
+
+    drop = response.get('requested_drops')
+
+    return drop
 
 
 def is_in_drop_list(drop_id, drop_list):
@@ -176,7 +186,7 @@ def create_drop(current_path):
 
     set_curr_action('create_drop')
 
-    return show_drops(
+    return show_drop(
         None,
         None,
         current_path,
@@ -194,7 +204,7 @@ def subscribe_to_drop():
 
     set_curr_action('subscribe_to_drop')
 
-    return show_drops(
+    return show_drop(
         None,
         None,
     )
@@ -227,7 +237,7 @@ def initialize_drop(drop_path):
 
     set_curr_action(None)
 
-    return show_drops(
+    return show_drop(
         None,
         message,
     )
@@ -251,7 +261,7 @@ def input_drop_to_subscribe(drop_code=None):
     }
 
     response = send_message(message)
-    return show_drops(
+    return show_drop(
         None,
         response.get('message'),
     )
@@ -275,7 +285,7 @@ def share_drop(drop_id):
     response = send_message(message)
     # TODO: remove drop_id after socket setup
     result = response.get('message')
-    return show_drops(drop_id, result)
+    return show_drop(drop_id, result)
 
 
 @app.route('/view_owners/<drop_id>/add/', methods=['GET', 'POST'])
@@ -344,7 +354,7 @@ def view_owners(drop_id, message=None):
     """
     set_curr_action('owners')
 
-    return show_drops(drop_id, message)
+    return show_drop(drop_id, message)
 
 
 @app.route('/whitelist/<drop_id>')
@@ -357,7 +367,7 @@ def whitelist(drop_id):
     """
     set_curr_action('whitelist')
 
-    return show_drops(drop_id, "node whitelisted")
+    return show_drop(drop_id, "node whitelisted")
 
 
 @app.route('/delete_drop/<drop_id>')
@@ -378,7 +388,7 @@ def delete_drop(drop_id):
 
     response = send_message(message)
 
-    return show_drops(
+    return show_drop(
         response.get('drop_id'),
         response.get('message'),
     )
@@ -402,9 +412,9 @@ def unsubscribe(drop_id):
     result = response.get('message')
 
     if response.get('success') is True:
-        return show_drops(None, result)
+        return show_drop(None, result)
     else:
-        return show_drops(drop_id, result)
+        return show_drop(drop_id, result)
 
 
 @app.route('/new_version/<drop_id>')
@@ -424,7 +434,7 @@ def new_version(drop_id):
 
     response = send_message(message)
 
-    return show_drops(
+    return show_drop(
         response.get('drop_id'),
         response.get('message'),
     )
@@ -432,11 +442,16 @@ def new_version(drop_id):
 
 @app.route('/')
 def startup():
-    return show_drops(None, None)
+    return show_drop(None, None)
 
 
-@app.route('/<drop_id>', methods=['GET', 'POST'])
+@app.route('/drop/<drop_id>', methods=['GET', 'POST'])
 def show_drops(drop_id=None, message=None, current_path=None):
+    set_curr_action(None)
+    return show_drop(drop_id, message, current_path)
+
+
+def show_drop(drop_id=None, message=None, current_path=None):
     """
     Main action handler. Shows drops
 
@@ -448,16 +463,27 @@ def show_drops(drop_id=None, message=None, current_path=None):
     global testing
 
     drop_tups = get_owned_subscribed_drops()
-    owned_drops = drop_tups[0]
-    subscribed_drops = drop_tups[1]
+    if drop_tups is not None:
+        owned_drops = drop_tups[0]
+        subscribed_drops = drop_tups[1]
+    else:
+        owned_drops = []
+        subscribed_drops = []
 
     selected_drop = []
     new_ver = None
     permission = None
 
+    file_status = {}
+    added = []
+
     if drop_id is not None:
 
-        selected_drop = get_selected_drop(drop_id)
+        if curr_action:
+            selected_drop_info = get_selected_drop(drop_id) or {}
+        else:
+            selected_drop_info = get_pending_changes(drop_id) or {}
+        selected_drop = selected_drop_info.get('drop')
         if selected_drop is not None:
 
             if is_in_drop_list(drop_id, owned_drops):
@@ -466,7 +492,18 @@ def show_drops(drop_id=None, message=None, current_path=None):
                 permission = "subscribed"
 
             # Check if new version can be created
-            version_update = selected_drop.get('new_version')
+            pending_changes = selected_drop_info.get('pending_changes', {})
+            added = pending_changes.get('added', [])
+            removed = pending_changes.get('removed', [])
+            changed = pending_changes.get('changed', [])
+            unchanged = pending_changes.get('unchanged', [])
+            for f in removed:
+                file_status[f] = 'removed'
+            for f in changed:
+                file_status[f] = 'changed'
+            for f in unchanged:
+                file_status[f] = 'unchanged'
+            version_update = any([added, removed, changed])
             if version_update and is_in_drop_list(drop_id, owned_drops):
                 new_ver = True
                 flash('NEW VERSION can be made. Select NEW VERSION.')
@@ -509,6 +546,8 @@ def show_drops(drop_id=None, message=None, current_path=None):
             permission=permission,
             directory=current_path,
             directory_folders=folders,
+            file_status=file_status,
+            added=added,
         )
     else:
         return {
