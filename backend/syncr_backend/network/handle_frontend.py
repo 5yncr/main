@@ -33,6 +33,8 @@ from syncr_backend.metadata.drop_metadata import DropMetadata
 from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import check_for_changes
+from syncr_backend.util.drop_util import check_for_update
+from syncr_backend.util.drop_util import find_changes_in_new_version
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_file_names_percent
 from syncr_backend.util.drop_util import get_owned_subscribed_drops_metadata
@@ -240,16 +242,31 @@ async def _handle_selected_drop(
         if get_pending_changes:
             file_update_status = await check_for_changes(drop_id)
             if file_update_status is None:
-                pending_changes = {}  # type: Dict[str, List[str]]
+                local_pending_changes = {}  # type: Dict[str, List[str]]
             else:
-                pending_changes = {
+                local_pending_changes = {
                     'added': list(file_update_status.added),
                     'removed': list(file_update_status.removed),
                     'changed': list(file_update_status.changed),
                     'unchanged': list(file_update_status.unchanged),
                 }
+
+            new_metadata, new_version_available = \
+                await check_for_update(request['drop_id'])
+            remote_pending_changes = {}  # type: Dict[str, List[str]]
+            if new_version_available:
+                remote_update_status = await find_changes_in_new_version(
+                    request['drop_id'], new_metadata,
+                )
+                if remote_update_status is not None:
+                    remote_pending_changes = {
+                        'added': list(remote_update_status.added),
+                        'removed': list(remote_update_status.removed),
+                        'changed': list(remote_update_status.changed),
+                        'unchanged': list(remote_update_status.unchanged),
+                    }
         else:
-            pending_changes = {}
+            local_pending_changes = {}
         if drop is None:
             response = {
                 'status': 'error',
@@ -264,7 +281,8 @@ async def _handle_selected_drop(
                 'message': 'selected files retrieved',
                 'requested_drops': {
                     'drop': drop,
-                    'pending_changes': pending_changes,
+                    'pending_changes': local_pending_changes,
+                    'remote_pending_changes': remote_pending_changes,
                 },
             }
 

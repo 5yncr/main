@@ -70,7 +70,7 @@ def run_backend() -> None:
     else:
         ext_addr = arguments.ip[0]
     if arguments.external_port is not None:
-        ext_port = arguments.ext_port
+        ext_port = arguments.external_port
     else:
         ext_port = int(arguments.port[0])
 

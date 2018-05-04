@@ -540,6 +540,59 @@ class FileUpdateStatus(NamedTuple):
     unchanged: Set[str]
 
 
+async def find_changes_in_new_version(
+    drop_id: bytes, new_metadata: DropMetadata,
+) -> Optional[FileUpdateStatus]:
+    """
+    Creates a FileUpdateStatus object for the changes between the current
+    and the most provided version
+
+    :param drop_id: the drop to look over
+    :param new_metadata: metadata of new version to check against
+    :return: FileUpdateStatus object for the changes
+    """
+    logger.info(
+        "Finding changes between current version and newest version",
+        " of drop: ", drop_id,
+    )
+    drop_location = await get_drop_location(drop_id)
+    if drop_location is None:
+        return None
+    drop_metadata = await DropMetadata.read_file(
+        id=drop_id,
+        metadata_location=os.path.join(
+            drop_location, DEFAULT_DROP_METADATA_LOCATION,
+        ),
+    )
+
+    assert drop_id == new_metadata.id, "Matching drop_ids required"
+    if drop_metadata is None:
+        return None
+    assert drop_metadata.version < new_metadata.version, "New version required"
+
+    added_files = set()
+    changed_files = set()
+    unchanged_files = set()
+    removed_files = set(drop_metadata.files.keys())
+
+    for (name, id) in new_metadata.files.items():
+        if name in removed_files:
+            if drop_metadata.files[name] == new_metadata.files[name]:
+                unchanged_files.add(name)
+            else:
+                changed_files.add(name)
+            removed_files.remove(name)
+        else:
+            added_files.add(name)
+
+    return FileUpdateStatus(
+        added=added_files,
+        removed=removed_files,
+        changed=changed_files,
+        unchanged=unchanged_files,
+    )
+
+
 async def check_for_changes(drop_id: bytes) -> Optional[FileUpdateStatus]:
     """Checks over the local drop and returns what files have local
     changes if any
