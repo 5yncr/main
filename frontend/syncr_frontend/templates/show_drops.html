@@ -37,7 +37,6 @@
 {% block toolbar %}
 {% if selected and permission == "owned" %}
   <div class="btn-group">
-    <a href="{{ url_for('show_drops', drop_id=selected.drop_id) }}"><button>Reload</button></a>
     {% if new_version %}
     <a href="{{ url_for('new_version', drop_id=selected.drop_id) }}"><button>New Version</button></a>
     {% endif %}
@@ -47,8 +46,9 @@
   </div>
 {% elif selected and permission == "subscribed" %}
   <div class="btn-group">
-      <a href="{{ url_for('show_drops', drop_id=selected.drop_id) }}"><button>Reload</button></a>
-      <a href="{{ url_for('unsubscribe', drop_id=selected.drop_id) }}"><button>Unsubscribe</button></a>
+    <a href="{{ url_for('share_drop', drop_id=selected.drop_id) }}"><button>Share</button></a>
+    <a href="{{ url_for('unsubscribe', drop_id=selected.drop_id) }}"><button>Unsubscribe</button></a>
+    <a href="{{ url_for('delete_drop', drop_id=selected.drop_id) }}"><button>Delete Drop</button></a>
   </div>
 {% endif %}
 {% endblock %}
@@ -142,7 +142,8 @@
       </form>
     </div>
 {% elif selected %}
-  Name is {{ selected.name|safe }}. {{ action.description|safe }}
+    <b> {{ selected.name|safe }}. {{ action.description|safe }} <b>
+    <hr>
     <table class=file-table>
       {% for name, percent in selected.files.items() %}
         <tr class=file-info-row>

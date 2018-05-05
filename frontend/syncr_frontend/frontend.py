@@ -459,6 +459,7 @@ def new_version(drop_id):
 
 @app.route('/')
 def startup():
+    set_curr_action(None)
     return show_drop(None, None)
 
 
