@@ -29,7 +29,7 @@
 {% block drop_creation %}
 <div class="btn-group">
   <a href="{{ url_for('create_drop', current_path=directory) }}"><button>Create Drop</button></a>
-  <a href="{{ url_for('subscribe_to_drop') }}"><button>Subscribe to Drop</button></a>
+  <a href="{{ url_for('subscribe_to_drop', current_path=directory) }}"><button>Subscribe to Drop</button></a>
 </div>
 {% endblock %}
 
@@ -97,38 +97,50 @@
     </p>
   </center>
 {% elif selec_act == "create_drop" %}
+    <b>Current Directory for New Drop:<b>
+    <div class=file-action-container>
+      <div class=file-action-button-container>
+        <a href="{{ url_for('initialize_drop', drop_path= directory) }}"><button type="button">Create Drop Here</button></a>
+      </div>
+    </div>
+    <br>
+    <b>{{ directory|safe }}</b>
+    <hr>
     <table class=file-table>
-      <tr class=file-info-row>
-        <b>Current Directory: {{ directory|safe }}<b>
-        <div class=file-action-container>
-          <div class=file-action-button-container>
-            <a href="{{ url_for('initialize_drop', drop_path= directory) }}"><button type="button">Create Drop Here</button></a>
-          </div>
-        </div>
-      </tr>
-      <hr>
       {% for file in directory_folders %}
           <tr class=file-info-row>
               <th class=file-name><a href="{{ url_for('create_drop', current_path= directory + '/' + file) }}">{{ file|safe }}</a></th>
           </tr>
       {% endfor %}
     </table>
-{% elif selec_act == "subscribe_to_drop" %}
-  <table class=file-table>
-    <tr class=file-info-row>
-      <th class=create-prompt>Input drop name:</th>
-      <th class=file-actions>
-        <div class=file-action-container>
-          <div class=file-action-button-container>
-            <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
-              Drop to Subscribe to: <input type='text' id='drop_to_subscribe_to' name='drop_to_subscribe_to' />
-              <input class=file-action-button type='submit' value='Subscribe'/>
-            </form>
-          </div>
-        </div>
-      </th>
-    </tr>
-  </table>
+  {% elif selec_act == "subscribe_to_drop_directory" %}
+    <b>Current Directory for Subscribed Drop: <b>
+    <div class=file-action-container>
+      <div class=file-action-button-container>
+        <a href="{{ url_for('subscribe_to_drop_with_directory', drop_path= directory) }}"><button type="button">Save Subscribed Drop Here</button></a>
+      </div>
+    </div>
+    <br>
+    <b>{{ directory|safe }}/Subscribed_Drop_Name<b>
+    <hr>
+    <table class=file-table>
+      {% for file in directory_folders %}
+          <tr class=file-info-row>
+              <th class=file-name><a href="{{ url_for('subscribe_to_drop', current_path= directory + '/' + file) }}">{{ file|safe }}</a></th>
+          </tr>
+      {% endfor %}
+    </table>
+  {% elif selec_act == "subscribe_to_drop_name" %}
+    <div class=dark-info>
+      Save drop to: {{ directory }}/Subscribed_Drop_Name
+    </div>
+    <div class=dark-info>
+      <form method="POST" action="{{ url_for('input_drop_to_subscribe') }}">
+        Drop to Subscribe to: <input type='text' name='drop_to_subscribe_to' />
+        <input type="hidden" name="drop_path" value= {{ directory }}>
+        <input class=file-action-button type='submit' value='Subscribe'/>
+      </form>
+    </div>
 {% elif selected %}
   Name is {{ selected.name|safe }}. {{ action.description|safe }}
     <table class=file-table>

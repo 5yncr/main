@@ -48,7 +48,6 @@ def open_file_location(file_path):
     Opens the location of the file
 
     :param file_path: Path of the file on computer
-    :return: opens location of file
     """
     # Placeholder until backend communication is set-up
     file_path = path.dirname(path.abspath(__file__))
@@ -169,7 +168,6 @@ def set_curr_action(action_update):
     button
 
     :param action_update: name of action
-    :return: none
     """
 
     global curr_action
@@ -194,19 +192,35 @@ def create_drop(current_path):
     )
 
 
-@app.route('/subscribe_to_drop')
-def subscribe_to_drop():
+@app.route('/subscribe_to_drop/<path:current_path>')
+def subscribe_to_drop(current_path):
     """
     This function provides the UI with the prompt to subscribe to a drop.
 
     :return: response that triggers the UI prompt.
     """
 
-    set_curr_action('subscribe_to_drop')
+    set_curr_action('subscribe_to_drop_directory')
 
     return show_drop(
         None,
         None,
+        current_path,
+    )
+
+
+@app.route('/subscribe_to_drop_with_directory/<path:drop_path>')
+def subscribe_to_drop_with_directory(drop_path):
+    """
+    Given a directory, requests user to provide drop code
+    for a drop to subscribed to and then save in that location
+    """
+    set_curr_action('subscribe_to_drop_name')
+
+    return show_drop(
+        None,
+        None,
+        drop_path,
     )
 
 
@@ -244,7 +258,7 @@ def initialize_drop(drop_path):
 
 
 @app.route('/subscribe', methods=['POST'])
-def input_drop_to_subscribe(drop_code=None):
+def input_drop_to_subscribe(drop_code=None, drop_path=None):
     """
     After inputting a name, user is subscribed to drop if it exists
 
@@ -252,12 +266,15 @@ def input_drop_to_subscribe(drop_code=None):
     """
     if drop_code is None:
         result = request.form.get('drop_to_subscribe_to')
+        path = request.form['drop_path']
     else:
         result = drop_code
+        path = drop_path
 
     message = {
         'action': 'input_drop_to_subscribe',
         'drop_name': result,
+        'directory': '/' + path,
     }
 
     response = send_message(message)

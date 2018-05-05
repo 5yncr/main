@@ -17,6 +17,11 @@ h1 {
 h2 {
     font-size : 1.2em;
 }
+
+.dark-info {
+    background-color:gainsboro;
+}
+
 .navbar li {
     list-style-type : none;
     margin : 0;
