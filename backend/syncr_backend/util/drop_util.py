@@ -367,6 +367,24 @@ async def start_drop_from_id(drop_id: bytes, save_dir: str) -> None:
     await save_drop_location(drop_id, save_dir)
 
 
+async def do_metadata_request(
+    drop_id: bytes, peers: List[Tuple[str, int]],
+    version: Optional[DropVersion]=None,
+) -> Optional[DropMetadata]:
+    if not peers:
+        peers = await get_drop_peers(drop_id)
+    args = {
+        'drop_id': drop_id,
+        'drop_version': version,
+    }
+    metadata = await send_requests.do_request(
+        request_fun=send_requests.send_drop_metadata_request,
+        peers=peers,
+        fun_args=args,
+    )
+    return metadata
+
+
 async def get_drop_metadata(
     drop_id: bytes, peers: List[Tuple[str, int]], save_dir: Optional[str]=None,
     version: Optional[DropVersion]=None,
@@ -391,17 +409,7 @@ async def get_drop_metadata(
 
     if metadata is None:
         logger.debug("drop metadata not on disk, getting from network")
-        if not peers:
-            peers = await get_drop_peers(drop_id)
-        args = {
-            'drop_id': drop_id,
-            'drop_version': version,
-        }
-        metadata = await send_requests.do_request(
-            request_fun=send_requests.send_drop_metadata_request,
-            peers=peers,
-            fun_args=args,
-        )
+        metadata = await do_metadata_request(drop_id, peers, version)
         # mypy can't figure out that this won't be None
         metadata = cast(DropMetadata, metadata)
 
@@ -414,7 +422,7 @@ async def get_drop_metadata(
 
 async def verify_version(
     drop_metadata: DropMetadata,
-    peers: Optional[List[Tuple[str, int]]]=None,
+    peers: List[Tuple[str, int]]=[],
 ) -> None:
     """Verify the DropMetadata version recursively
 
@@ -431,7 +439,7 @@ async def verify_version(
         return
     elif len(drop_metadata.previous_versions) == 1:
         version = drop_metadata.previous_versions[0]
-        if peers is None:
+        if not peers:
             peers = await get_drop_peers(drop_metadata.id)
         dmd = await get_drop_metadata(drop_metadata.id, peers, version=version)
         verify_version(dmd, peers)
@@ -737,6 +745,7 @@ async def sync_file_contents(
             result_queue.task_done()
         if not added:
             break
+        peers = await get_drop_peers(drop_id)
 
     processor.cancel()
     return needed_chunks
@@ -837,6 +846,7 @@ class PeerStoreError(Exception):
     pass
 
 
+@async_util.async_cache(cache_obj=TTLCache, ttl=5)
 async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     """
     Gets the peers that have a drop. Also shuffles the list
@@ -852,7 +862,8 @@ async def get_drop_peers(drop_id: bytes) -> List[Tuple[str, int]]:
     )
     success, drop_peers = await drop_peer_store_instance.request_peers(drop_id)
     if not success:
-        raise PeerStoreError("Could not connect to peers")
+        encoded_id = crypto_util.b64encode(drop_id)
+        raise PeerStoreError("No peers found for drop %s" % encoded_id)
 
     peers = [(ip, int(port)) for peer_name, ip, port in drop_peers]
 

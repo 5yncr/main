@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import asyncio
+import os
 import sys
 
 from syncr_backend.init import drop_init
@@ -23,7 +24,8 @@ def main() -> None:
     args = parser().parse_args()
 
     loop = asyncio.get_event_loop()
-    id = loop.run_until_complete(drop_init.initialize_drop(args.directory))
+    path = os.path.abspath(args.directory)
+    id = loop.run_until_complete(drop_init.initialize_drop(path))
     sys.stdout.write("%s" % id.decode('utf-8'))
     sys.stdout.flush()
 

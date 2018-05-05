@@ -34,6 +34,7 @@ from syncr_backend.metadata.drop_metadata import get_drop_location
 from syncr_backend.util import crypto_util
 from syncr_backend.util.drop_util import check_for_changes
 from syncr_backend.util.drop_util import check_for_update
+from syncr_backend.util.drop_util import do_metadata_request
 from syncr_backend.util.drop_util import find_changes_in_new_version
 from syncr_backend.util.drop_util import get_drop_metadata
 from syncr_backend.util.drop_util import get_file_names_percent
@@ -331,7 +332,7 @@ async def handle_get_owned_subscribed_drops(
 
 
 async def handle_input_subscribe_drop(
-        request: Dict[str, Any], conn: asyncio.StreamWriter,
+    request: Dict[str, Any], conn: asyncio.StreamWriter,
 ) -> None:
     """
     Handling function to subscribe to drop that user specifies.
@@ -344,22 +345,35 @@ async def handle_input_subscribe_drop(
     :param conn: socket.accept() connection
     :return: None
     """
-    if request['drop_id'] is None or request['file_path'] is None:
+    if request.get('drop_id') is None or request.get('directory') is None:
         response = {
             'status': 'error',
             'error': ERR_INVINPUT,
         }
     else:
 
-        drop_id = request['drop_id']
-        file_path = request['file_path']
+        drop_id = crypto_util.b64decode(request['drop_id'])
+        file_path = request['directory']
+
+        metadata = await do_metadata_request(drop_id, [])
+
+        if metadata is None:
+            response = {
+                'status': 'error',
+                'error': ERR_INVINPUT,
+            }
+            await send_response(conn, response)
+            return
+
+        name = metadata.name
+        full_path = os.path.join(file_path, name)
 
         try:
-            await queue_sync(drop_id, file_path)
+            await queue_sync(drop_id, full_path)
             response = {
                 'status': 'ok',
                 'result': 'success',
-                'message': 'subscribed to drop ' + request['drop_id'],
+                'message': 'subscribed to drop ' + name,
             }
         except RuntimeError:
             response = {
