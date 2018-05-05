@@ -42,7 +42,12 @@
     {% endif %}
     <a href="{{ url_for('share_drop', drop_id=selected.drop_id) }}"><button>Share</button></a>
     <a href="{{ url_for('view_owners', drop_id=selected.drop_id) }}"><button>Owners</button></a>
-    <a href="{{ url_for('delete_drop', drop_id=selected.drop_id) }}"><button>Delete Drop</button></a>
+    <a href="{{ url_for('delete_drop', drop_id=selected.drop_id) }}" onclick="confirmDeleteDrop()"><button>Delete Drop</button></a>
+    <script>
+    function confirmDeleteDrop() {
+      return confirm("Are you sure you want to delete this drop?")
+    }
+    </script>
   </div>
 {% elif selected and permission == "subscribed" %}
   <div class="btn-group">
