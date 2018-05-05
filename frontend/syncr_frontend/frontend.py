@@ -295,14 +295,9 @@ def share_drop(drop_id):
 
     set_curr_action('share drop')
 
-    message = {
-        'drop_id': drop_id,
-        'action': 'share_drop',
-    }
-    response = send_message(message)
-    # TODO: remove drop_id after socket setup
-    result = response.get('message')
-    return show_drop(drop_id, result)
+    flash("Download Code: " + drop_id)
+
+    return show_drops(drop_id, None)
 
 
 @app.route('/view_owners/<drop_id>/add/', methods=['GET', 'POST'])
