@@ -9,10 +9,11 @@ from typing import cast
 from typing import Dict  # noqa
 from typing import List
 from typing import NamedTuple
-from typing import Optional  # noqa
+from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import TypeVar
+from typing import Union  # noqa
 
 from cachetools import TTLCache  # type: ignore
 
@@ -85,9 +86,16 @@ async def sync_drop(
         n=MAX_CONCURRENT_FILE_DOWNLOADS,
         task_timeout=1,
     )
+
     lock.release()
 
-    return all(file_results), drop_id
+    no_exceptions = True
+    for result in file_results:
+        if isinstance(result, BaseException):
+            logger.error("Failed to download a file: %s", result)
+            no_exceptions = False
+
+    return all(file_results) and no_exceptions, drop_id
 
 
 T = TypeVar('T')
@@ -233,7 +241,7 @@ async def process_sync_queue() -> None:
     """
     global _sync_in_queue
 
-    sync_out_queue = asyncio.Queue()  # type: asyncio.Queue[Tuple[bool, bytes]]
+    sync_out_queue = asyncio.Queue()  # type: asyncio.Queue[Union[Tuple[bool, bytes], BaseException]]  # noqa
 
     processor = asyncio.ensure_future(
         async_util.process_queue_with_limit(
@@ -242,7 +250,12 @@ async def process_sync_queue() -> None:
     )
     try:
         while True:
-            done, drop_id = await sync_out_queue.get()
+            out = await sync_out_queue.get()
+            if isinstance(out, BaseException):
+                logger.error("Faied to sync a drop, can't try again", out)
+                continue
+
+            done, drop_id = out
 
             if not done:
                 # TODO: add exponential backoff for failures
@@ -687,7 +700,7 @@ async def sync_file_contents(
         needed_chunks = await file_metadata.needed_chunks
 
     process_queue = asyncio.Queue()  # type: asyncio.Queue[Awaitable[Optional[int]]] # noqa
-    result_queue = asyncio.Queue()  # type: asyncio.Queue[Optional[int]]
+    result_queue = asyncio.Queue()  # type: asyncio.Queue[Union[Optional[int], BaseException]] # noqa
 
     processor = asyncio.ensure_future(
         async_util.process_queue_with_limit(
@@ -702,7 +715,7 @@ async def sync_file_contents(
         ):
             for cid in chunks_to_download:
                 await process_queue.put(
-                    download_chunk_form_peer(
+                    download_chunk_from_peer(
                         ip=ip,
                         port=port,
                         drop_id=drop_id,
@@ -717,7 +730,9 @@ async def sync_file_contents(
         await process_queue.join()
         while not result_queue.empty():
             result = await result_queue.get()
-            if result is not None:
+            if isinstance(result, BaseException):
+                logger.error("Failed to download a chunk: %s", result)
+            elif result is not None:
                 needed_chunks.remove(result)
             result_queue.task_done()
         if not added:
@@ -777,7 +792,7 @@ async def get_chunk_list(
     ))
 
 
-async def download_chunk_form_peer(
+async def download_chunk_from_peer(
     ip: str, port: int, drop_id: bytes, file_id: bytes, file_index: int,
     file_metadata: FileMetadata, full_path: str,
 ) -> Optional[int]:

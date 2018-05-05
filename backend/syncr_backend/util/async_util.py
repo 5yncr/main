@@ -63,7 +63,7 @@ async def limit_gather(fs, n, task_timeout=0):
     while pending:
         done, pending = await asyncio.wait(tasks, return_when=ALL_COMPLETED)
 
-    return [t.result() for t in tasks]
+    return [t.exception() or t.result() for t in tasks]
 
 
 async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
@@ -117,7 +117,9 @@ async def process_queue_with_limit(queue, n, done_queue, task_timeout=0):
         while True:
             task = asyncio.ensure_future(await queue.get())
             task.add_done_callback(
-                lambda future: done_queue.put_nowait(future.result()),
+                lambda future: done_queue.put_nowait(
+                    future.exception() or future.result(),
+                ),
             )
             task.add_done_callback(
                 lambda _: queue.task_done(),
