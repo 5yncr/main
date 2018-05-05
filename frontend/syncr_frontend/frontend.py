@@ -273,7 +273,7 @@ def input_drop_to_subscribe(drop_code=None, drop_path=None):
 
     message = {
         'action': 'input_drop_to_subscribe',
-        'drop_name': result,
+        'drop_id': result,
         'directory': '/' + path,
     }
 
