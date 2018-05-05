@@ -1,3 +1,7 @@
+# 04/05/2018
+      frontend: Make delete_drop less horrible (#41)
+      frontend: Create initial rst documentation for user manual (#45)
+
 # 27/04/2018
       backend: Remove old / unused code from backend files. Refactor code to get metadata list of owned and subscribed drops (#89)
       frontend: Remove Add File button. Fix permission functionalities. Remove unused code  (#27)

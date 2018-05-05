@@ -1,3 +1,15 @@
+# 04/05/2018
+      backend: Bump dependencies and fix doc strings (#88)
+      backend: Add some generic documentation (#95)
+      backend: Add check update and new version scripts (#98)
+      backend: Fix unsubscribe (#104)
+      backend: Handle exceptions in async code (#96)
+      backend: Fix various bugs (#105)
+      frontend: Add some basic docs
+      frontend: Polish and optimize drop view page (#35)
+      frontend: Update to work with backend changes (#43)
+      tracker: Add some basic docs, bump deps, and use argparse
+
 # 27/04/2018
       backend: Fixup backend and frontend communication (#67)
       backend: Calculate file completion percent and send it to the frontend (#69)

@@ -1,3 +1,6 @@
+# 04/05/2018
+      backend: Add remote version file change detection (#103)
+
 # 27/04/2018
       backend: Add check for changes in a drop function (#81)
       tracker: Remove dups (#11)

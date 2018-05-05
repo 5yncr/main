@@ -1,3 +1,8 @@
+# 04/05/2018
+      frontend: Add directory picker to subscribe to drop section and update ui layout (#40)
+      frontend: Remvoe reload, add share to subs, 5yncr home page fix (#42)
+      frontend: Sharing works properly (#46)
+
 # 27/04/2018
       frontend: Remove Tk and implement different way to select directory path (#28)
       frontend: Catch and handle socket errors and fix issue with drop_subscribe form (#30)

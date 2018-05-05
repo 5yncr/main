@@ -1,3 +1,7 @@
+# 04/05/2018
+      notes: made significant progress optimizing change detection, but it
+      didn't run the tests in time for midnight
+
 # 27/04/2018
       backend: Fix test failure due to drop IDs starting in '-'
       backend: Add Sphinx Documentation (#90)
