@@ -67,7 +67,7 @@ setup(
         "packaging==17.1",
         "pluggy==0.6.0",
         "pre-commit==1.8.2",
-        "psutil==5.4.5",
+        "psutil==5.6.6",
         "purepng==0.2.0",
         "py==1.5.3",
         "pycodestyle==2.3.1",
