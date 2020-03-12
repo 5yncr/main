@@ -42,7 +42,7 @@ setup(
         "nodeenv==1.2.0",
         "pluggy==0.6.0",
         "pre-commit==1.6.0",
-        "psutil==5.4.3",
+        "psutil==5.6.6",
         "py==1.5.2",
         "pycodestyle==2.3.1",
         "pycparser==2.18",
