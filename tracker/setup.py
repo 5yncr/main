@@ -33,7 +33,7 @@ setup(
         "cached-property==1.3.1",
         "cffi==1.11.4",
         "coverage==4.5.1",
-        "cryptography==2.1.4",
+        "cryptography==3.2",
         "flake8==3.5.0",
         "identify==1.0.7",
         "idna==2.6",
