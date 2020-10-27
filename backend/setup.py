@@ -50,7 +50,7 @@ setup(
         "chardet==3.0.4",
         "CommonMark==0.5.4",
         "coverage==4.5.1",
-        "cryptography==2.2.2",
+        "cryptography==3.2",
         "docutils==0.14",
         "flake8==3.5.0",
         "future==0.16.0",
