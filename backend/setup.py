@@ -57,7 +57,7 @@ setup(
         "identify==1.0.13",
         "idna==2.6",
         "imagesize==1.0.0",
-        "Jinja2==2.10",
+        "Jinja2==2.11.3",
         "kademlia==1.0",
         "MarkupSafe==1.0",
         "mccabe==0.6.1",
