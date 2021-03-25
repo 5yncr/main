@@ -48,7 +48,7 @@ setup(
         "pycparser==2.18",
         "pyflakes==1.6.0",
         "pytest==3.4.1",
-        "PyYAML==3.12",
+        "PyYAML==5.4",
         "six==1.11.0",
         "tox==2.9.1",
         "typed-ast==1.1.0",
