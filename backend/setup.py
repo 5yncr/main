@@ -69,7 +69,7 @@ setup(
         "pre-commit==1.8.2",
         "psutil==5.4.5",
         "purepng==0.2.0",
-        "py==1.5.3",
+        "py==1.10.0",
         "pycodestyle==2.3.1",
         "pycparser==2.18",
         "pyflakes==1.6.0",
