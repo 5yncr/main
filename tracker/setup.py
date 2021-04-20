@@ -43,7 +43,7 @@ setup(
         "pluggy==0.6.0",
         "pre-commit==1.6.0",
         "psutil==5.4.3",
-        "py==1.5.2",
+        "py==1.10.0",
         "pycodestyle==2.3.1",
         "pycparser==2.18",
         "pyflakes==1.6.0",
