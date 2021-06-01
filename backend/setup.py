@@ -95,7 +95,7 @@ setup(
         "tox==3.0.0",
         "typed-ast==1.1.0",
         "u-msgpack-python==2.5.0",
-        "urllib3==1.22",
+        "urllib3==1.26.5",
         "virtualenv==15.2.0",
     ],
 )
